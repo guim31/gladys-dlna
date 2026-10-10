@@ -1,0 +1,45 @@
+<?xml version="1.0" encoding="utf-8"?>
+<root xmlns="urn:schemas-upnp-org:device-1-0">
+<specVersion><major>1</major><minor>1</minor></specVersion>
+<URLBase>http://192.0.2.41:49152/</URLBase>
+<device>
+<deviceType>urn:schemas-upnp-org:device:MediaRenderer:1</deviceType>
+<friendlyName>Volumio</friendlyName>
+<manufacturer>JF Light</manufacturer>
+<manufacturerURL>https://www.lesbonscomptes.com/upmpdcli</manufacturerURL>
+<modelDescription>UPnP front-end to MPD</modelDescription>
+<modelName>UpMPD</modelName>
+<modelNumber>1.8</modelNumber>
+<UDN>uuid:00000000-0000-4000-8000-0000000000b1</UDN>
+<serviceList>
+<service>
+<serviceType>urn:schemas-upnp-org:service:RenderingControl:1</serviceType>
+<serviceId>urn:upnp-org:serviceId:RenderingControl</serviceId>
+<SCPDURL>upnp/RenderingControl.xml</SCPDURL>
+<controlURL>ctl/RenderingControl</controlURL>
+<eventSubURL>evt/RenderingControl</eventSubURL>
+</service>
+<service>
+<serviceType>urn:schemas-upnp-org:service:AVTransport:1</serviceType>
+<serviceId>urn:upnp-org:serviceId:AVTransport</serviceId>
+<SCPDURL>upnp/AVTransport.xml</SCPDURL>
+<controlURL>ctl/AVTransport</controlURL>
+<eventSubURL>evt/AVTransport</eventSubURL>
+</service>
+<service>
+<serviceType>urn:schemas-upnp-org:service:ConnectionManager:1</serviceType>
+<serviceId>urn:upnp-org:serviceId:ConnectionManager</serviceId>
+<SCPDURL>upnp/ConnectionManager.xml</SCPDURL>
+<controlURL>ctl/ConnectionManager</controlURL>
+<eventSubURL>evt/ConnectionManager</eventSubURL>
+</service>
+<service>
+<serviceType>urn:av-openhome-org:service:Playlist:1</serviceType>
+<serviceId>urn:av-openhome-org:serviceId:Playlist</serviceId>
+<SCPDURL>upnp/OHPlaylist.xml</SCPDURL>
+<controlURL>ctl/Playlist</controlURL>
+<eventSubURL>evt/Playlist</eventSubURL>
+</service>
+</serviceList>
+</device>
+</root>

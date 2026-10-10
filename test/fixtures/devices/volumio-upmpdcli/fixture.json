@@ -1,0 +1,10 @@
+{
+  "location": "http://192.0.2.41:49152/uuid-00000000-0000-4000-8000-0000000000b1/description.xml",
+  "origin": "reconstructed from the public format of upmpdcli, not a capture",
+  "files": {
+    "/uuid-00000000-0000-4000-8000-0000000000b1/description.xml": "description.xml",
+    "/upnp/AVTransport.xml": "AVTransport.xml",
+    "/upnp/RenderingControl.xml": "RenderingControl.xml"
+  },
+  "soap": {}
+}

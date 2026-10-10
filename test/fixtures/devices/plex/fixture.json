@@ -1,0 +1,8 @@
+{
+  "location": "http://192.0.2.51:32469/DeviceDescription.xml",
+  "origin": "reconstructed from the public format of Plex Media Server, not a capture",
+  "files": {
+    "/DeviceDescription.xml": "DeviceDescription.xml"
+  },
+  "soap": {}
+}

@@ -1,0 +1,11 @@
+{
+  "location": "http://192.0.2.21:1234/device.xml",
+  "origin": "async-upnp-client test fixture (Apache-2.0)",
+  "files": {
+    "/device.xml": "device.xml",
+    "/AVTransport_1.xml": "../aup-dmr/AVTransport_1.xml",
+    "/RenderingControl_1.xml": "../aup-dmr/RenderingControl_1.xml",
+    "/ConnectionManager_1.xml": "../aup-dmr/ConnectionManager_1.xml"
+  },
+  "soap": {}
+}

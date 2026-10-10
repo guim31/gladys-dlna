@@ -1,42 +1,47 @@
 // -----------------------------------------------------------------------------
 // Integration configuration.
 //
-// The configuration is filled in by the user in Gladys, from the `config_schema`
-// declared in `gladys-assistant-integration.json`. The SDK fetches it for you
-// (`gladys.getConfig()`) and notifies you of every change through
-// `gladys.onConfigUpdated()`.
-//
-// This module only provides defaults and normalizes the received object, so the
-// rest of the code never has to deal with `undefined`.
+// Filled in by the user from the manifest `config_schema`; fetched with
+// `gladys.getConfig()` and pushed again through `gladys.onConfigUpdated()`.
+// This module only provides the defaults and normalizes what arrives.
 // -----------------------------------------------------------------------------
 
-// Defaults: they MUST stay consistent with the `default` values declared in the
-// `config_schema` of the manifest.
+import { isHttpUrl } from './upnp/http.js';
+
+// MUST stay consistent with the `default` values of the manifest config_schema.
 export const DEFAULT_CONFIG = {
-  latitude: 48.8566, // Paris
-  longitude: 2.3522,
-  unit: 'celsius', // 'celsius' | 'fahrenheit'
-  poll_frequency: 300, // seconds, how often sensors are refreshed
-  // Reserved key (NOT in config_schema): because the manifest declares both
-  // 'local' and 'cloud' in its `transports` field, Gladys shows a standard
-  // "Prefer the local connection" toggle and sends the user's choice here.
-  // Read-only for the integration; defaults to true.
-  GLADYS_PREFER_LOCAL: true,
+  // Description URLs typed by hand, for the devices SSDP cannot find (another
+  // subnet, a VLAN, a device that does not answer searches).
+  description_urls: '',
+  // Language of the feature names published at discovery: an integration of
+  // type "device" never learns the user's language.
+  language: 'en',
 };
+
+export const LANGUAGES = ['en', 'fr'];
+
+/** The http(s) URLs of a free-text list (commas, spaces or new lines). */
+export function parseUrlList(text) {
+  return [
+    ...new Set(
+      String(text ?? '')
+        .split(/[\s,;]+/)
+        .map((entry) => entry.trim())
+        .filter((entry) => isHttpUrl(entry)),
+    ),
+  ];
+}
 
 /**
  * Merge the user config with the defaults.
  * @param {Record<string, unknown>} raw config returned by the SDK
  */
 export function normalizeConfig(raw = {}) {
+  const config = raw ?? {};
   return {
     ...DEFAULT_CONFIG,
-    ...raw,
-    // Force the types: config may arrive as strings from a form.
-    latitude: Number(raw.latitude ?? DEFAULT_CONFIG.latitude),
-    longitude: Number(raw.longitude ?? DEFAULT_CONFIG.longitude),
-    poll_frequency: Number(raw.poll_frequency ?? DEFAULT_CONFIG.poll_frequency),
-    // The preference is a boolean; anything but an explicit false means true.
-    GLADYS_PREFER_LOCAL: raw.GLADYS_PREFER_LOCAL !== false,
+    ...config,
+    description_urls: String(config.description_urls ?? DEFAULT_CONFIG.description_urls),
+    language: LANGUAGES.includes(config.language) ? config.language : DEFAULT_CONFIG.language,
   };
 }

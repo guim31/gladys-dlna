@@ -1,0 +1,31 @@
+<?xml version="1.0" encoding="utf-8"?>
+<root xmlns="urn:schemas-upnp-org:device-1-0" xmlns:dlna="urn:schemas-dlna-org:device-1-0">
+  <specVersion><major>1</major><minor>0</minor></specVersion>
+  <device>
+    <deviceType>urn:schemas-upnp-org:device:MediaServer:1</deviceType>
+    <friendlyName>Plex Media Server: nas</friendlyName>
+    <manufacturer>Plex, Inc.</manufacturer>
+    <manufacturerURL>https://www.plex.tv/</manufacturerURL>
+    <modelDescription>Plex Media Server</modelDescription>
+    <modelName>Plex Media Server</modelName>
+    <modelNumber>1.41.0</modelNumber>
+    <UDN>uuid:00000000-0000-4000-8000-0000000000e1</UDN>
+    <dlna:X_DLNADOC>DMS-1.50</dlna:X_DLNADOC>
+    <serviceList>
+      <service>
+        <serviceType>urn:schemas-upnp-org:service:ContentDirectory:1</serviceType>
+        <serviceId>urn:upnp-org:serviceId:ContentDirectory</serviceId>
+        <SCPDURL>/ContentDirectory/scpd.xml</SCPDURL>
+        <controlURL>/ContentDirectory/control.xml</controlURL>
+        <eventSubURL>/ContentDirectory/event.xml</eventSubURL>
+      </service>
+      <service>
+        <serviceType>urn:schemas-upnp-org:service:ConnectionManager:1</serviceType>
+        <serviceId>urn:upnp-org:serviceId:ConnectionManager</serviceId>
+        <SCPDURL>/ConnectionManager/scpd.xml</SCPDURL>
+        <controlURL>/ConnectionManager/control.xml</controlURL>
+        <eventSubURL>/ConnectionManager/event.xml</eventSubURL>
+      </service>
+    </serviceList>
+  </device>
+</root>

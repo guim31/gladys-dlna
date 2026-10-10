@@ -1,0 +1,10 @@
+{
+  "location": "http://192.0.2.42:8080/description.xml",
+  "origin": "synthetic: a minimal renderer (no mute, no pause, volume 0-60)",
+  "files": {
+    "/description.xml": "device.xml",
+    "/av/scpd.xml": "av-scpd.xml",
+    "/rc/scpd.xml": "rc-scpd.xml"
+  },
+  "soap": {}
+}

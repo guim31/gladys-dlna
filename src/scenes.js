@@ -1,41 +1,80 @@
 // -----------------------------------------------------------------------------
-// Scene actions (SDK v0.14+, Gladys 5.1+).
+// Scene actions (manifest `scene_actions`, Gladys 5.1+).
 //
-// A scene action is an OPERATION a scene author places in a scene, with
-// parameters and a result: "identify this device", "take a snapshot", "clean
-// these rooms". Each one is declared in the manifest `scene_actions` field
-// (key, label, `fields` in the config_schema grammar, scalar `outputs`) and
-// handled here, keyed by that same `key`; index.js registers every entry with
-// `gladys.onSceneAction(key, ...)`.
+// `fields` arrive resolved by the core (scene variables substituted, defaults
+// applied, validated); a `"source": "devices"` field is the chosen device
+// external_id. A handler resolves the declared `outputs`; throwing fails this
+// action only, the scene goes on.
 //
-// Scene TRIGGERS are the other direction ("this happened"): they are fired by
-// the device that observes the event, see src/devices/motionSensor.js.
-//
-// The rules that matter:
-//   - `fields` arrive RESOLVED: scene variables substituted, defaults applied,
-//     validated by the core; a `"source": "devices"` field is the chosen
-//     device external_id;
-//   - resolve an object of the declared `outputs` (scalars only), readable by
-//     the following actions of the scene, or `undefined` for none. Keys not
-//     declared in the manifest are dropped by the core;
-//   - throwing fails THIS action only: the scene logs it and continues. A
-//     scene action is never a condition: return an output and let the scene
-//     author gate on it;
-//   - never fire a scene event as a consequence of a received action: a scene
-//     bound to that event would loop through the integration.
+// The scene triggers (playback started / paused / stopped) are fired by the
+// renderer poller when it sees the transport state change: see src/poller.js.
 // -----------------------------------------------------------------------------
 
 import { createLogger } from '@gladysassistant/integration-sdk';
-import { signalDevice } from './devices/index.js';
+import { SEARCH_BY } from './upnp/server.js';
+import { isHttpUrl } from './upnp/http.js';
+import { isRenderer, withServer } from './servers.js';
 
 const logger = createLogger({ name: 'scenes' });
 
-export const SCENE_ACTIONS = {
-  // The ack is awaited under the action's `timeout_seconds` (15 s in the
-  // manifest), counted from the moment the scene reaches the action.
-  async identify_device(gladys, { fields, config }) {
-    logger.info(`Scene action identify_device <- ${fields.device}`);
-    const signalled = await signalDevice(gladys, fields.device, config);
-    return { signalled };
-  },
-};
+export const PLAY_MODES = ['all', 'shuffle', 'first'];
+
+function requireRenderer(gladys, externalId) {
+  if (!isRenderer(gladys, externalId)) {
+    throw new Error('Pick a DLNA renderer');
+  }
+}
+
+/** A volume field: a number from 0 to 100, or undefined when left empty. */
+function volumeOf(value) {
+  if (value === undefined || value === null || value === '') return undefined;
+  const volume = Number(value);
+  if (!Number.isFinite(volume)) return undefined;
+  return Math.min(100, Math.max(0, Math.round(volume)));
+}
+
+export function createSceneActions(context) {
+  const { gladys, renderers } = context;
+  return {
+    /** Search a server and play the results on a renderer. */
+    async play_media(fields) {
+      requireRenderer(gladys, fields.renderer);
+      const by = SEARCH_BY.includes(fields.search_by) ? fields.search_by : 'any';
+      const mode = PLAY_MODES.includes(fields.mode) ? fields.mode : 'all';
+      const query = String(fields.query ?? '').trim();
+      logger.info(`Scene action play_media <- ${by} "${query}" (${mode})`);
+      const found = await withServer(context, fields.server, (server) =>
+        server.findMedia({ by, query }),
+      );
+      // "first" keeps the server order (album order for an album or a folder).
+      const items = mode === 'first' ? found.slice(0, 1) : found;
+      if (items.length === 0) {
+        logger.info(`play_media: nothing found for ${by} "${query}"`);
+        return { found: false, count: 0, title: '' };
+      }
+      const volume = volumeOf(fields.volume);
+      if (volume !== undefined) {
+        await renderers.setVolume(fields.renderer, volume);
+      }
+      const { track, count } = await renderers.playItems(fields.renderer, items, {
+        shuffled: mode === 'shuffle',
+      });
+      return { found: true, count, title: track.title || '' };
+    },
+
+    /** Play a URL (web radio, sound file) on a renderer. */
+    async play_url(fields) {
+      requireRenderer(gladys, fields.renderer);
+      const url = String(fields.url ?? '').trim();
+      if (!isHttpUrl(url)) {
+        throw new Error('The URL must start with http:// or https://');
+      }
+      logger.info(`Scene action play_url <- ${url}`);
+      await renderers.playUrl(fields.renderer, url, {
+        title: String(fields.title ?? '').trim() || undefined,
+        volume: volumeOf(fields.volume),
+      });
+      return { started: true };
+    },
+  };
+}
