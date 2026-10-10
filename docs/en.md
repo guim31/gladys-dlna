@@ -117,12 +117,15 @@ useful to play media from a server or announcements, next to their own integrati
   set in Gladys is the volume of the amplifier (15 in Gladys is MV15), mute is set and read back,
   stop stops, and the built-in media server is browsed. The amplifier wakes from standby by itself
   on a command. Its description, service descriptions and state answers are replayed by the tests.
-- **A renderer in standby may take about ten seconds to start**: the Denon accepts the media and
-  the Play command, wakes up, switches its source, and loses the Play meanwhile. The integration
-  therefore follows the start for up to 25 seconds: it presses Play again when the renderer is
-  awake but stopped (and loads the media again if needed), restarts once a playback cut right after
-  it started, and when nothing plays the "Play a URL" scene action fails with a clear message.
-  https streams play like http ones.
+- **A renderer in standby can take up to a minute to start**: measured on the Denon, it accepts
+  the media and the Play command, gives no usable answer for about 12 seconds while it wakes up,
+  then stays stopped and ignores Play for about 40 more seconds before it starts. The integration
+  therefore follows every start for up to 75 seconds, in the background: it waits while the
+  renderer does not answer, presses Play again every 5 seconds while it is stopped (and loads the
+  media again if needed), restarts once a playback cut right after it started, and stops following
+  as soon as another command or media comes in. Scene actions answer as soon as the renderer
+  accepted the command; a start that never comes is written in the logs of the integration. https
+  streams play like http ones.
 - **Not checked on real hardware yet**: the play queue and its gapless transitions, the network
   search run by Gladys, and searching a real media server (MiniDLNA, Plex, Jellyfin). They are
   covered by tests on simulated devices built from public formats. Please report any device that

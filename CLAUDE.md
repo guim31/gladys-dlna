@@ -160,10 +160,12 @@ code de ce dépôt. Compléter ce fichier quand un nouveau piège est découvert
   fonctionnalité ») et il figure dans les listes `source: "devices"` : c'est le cas des serveurs.
 - Une action de scène qui parcourt un serveur doit s'arrêter **avant** son `timeout_seconds` : le
   cœur abandonne, mais le conteneur continuerait. Échéance globale (`withDeadline`) sous ce délai.
-- **Test réel Denon AVR-S650H, depuis la veille** : SetAVTransportURI et Play répondent 200, puis
-  ~10 s d'état vide (réveil, bascule de source), puis STOPPED avec l'URI chargée : le Play est
-  perdu, et une lecture lancée pendant la bascule peut être coupée. Suivre le démarrage
-  (`ensurePlaying`), sans jamais contrarier une commande arrivée entre-temps. Le https marche :
+- **Test réel Denon AVR-S650H, depuis la veille** (mesuré) : SetAVTransportURI et Play en 200 à
+  t=1 s, état vide de 6 à 12 s, puis STOPPED avec l'URI chargée, et **tous les Play ignorés**
+  (200 quand même) jusqu'à ~51 s ; TRANSITIONING à 53 s, PLAYING à 57 s. Éveillé : PLAYING en ~5 s.
+  Suivre le démarrage en arrière-plan (`ensurePlaying` : 75 s, Play toutes les 5 s sans plafond),
+  sans jamais contrarier une commande arrivée entre-temps ; une action de scène répond dès que
+  Play est accepté (limite de 90 s). Le https marche :
   ne pas conclure d'un STOPPED sans savoir si l'appareil sortait de veille. Il décrit un artiste ou
   un album inconnu par `""` (deux guillemets) : `cleanText` les vide.
 - `publishStates` (lot) : un état texte part dans `text`, pas dans `state`.

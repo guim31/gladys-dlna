@@ -125,6 +125,7 @@ test('playUrl does not stop a stopped renderer', async () => {
  */
 async function standbyRenderer({
   wakeMs = 0,
+  ignoresPlayUntilMs = 0,
   dropAfterMs = null,
   plays = true,
   forgetsUri = false,
@@ -169,7 +170,7 @@ async function standbyRenderer({
   });
   network.onAction(DENON_AV, 'Play', () => {
     update();
-    if (awake() && plays && state.uri) {
+    if (awake() && plays && state.uri && clock >= ignoresPlayUntilMs) {
       state.transport = 'PLAYING';
       state.playingAt = clock;
     }
@@ -192,13 +193,17 @@ test('a renderer already on plays at once, https included, with one Play', async
   );
 });
 
-test('a renderer waking from standby: the lost Play is pressed again', async () => {
-  const { network, renderer, state, clock } = await standbyRenderer({ wakeMs: 10000 });
+test('the measured Denon wake-up: empty, then Play ignored ~40 s, then it plays', async () => {
+  const { network, renderer, state, clock } = await standbyRenderer({
+    wakeMs: 12000,
+    ignoresPlayUntilMs: 51000,
+  });
   assert.equal(await renderer.playUrl(URL), URL);
   assert.equal(state.transport, 'PLAYING');
-  assert.equal(network.actions('Play').length, 2);
+  const presses = network.actions('Play').length;
+  assert.ok(presses >= 8, `Play pressed ${presses} times, every 5 s while STOPPED`);
   assert.equal(network.actions('SetAVTransportURI').length, 1, 'the URI was still loaded');
-  assert.ok(clock() <= 25000, `${clock()} ms`);
+  assert.ok(clock() <= 75000, `${clock()} ms`);
 });
 
 test('a URI unloaded by the wake-up is loaded again', async () => {
@@ -219,14 +224,14 @@ test('a renderer that never plays ends with a clear error, within the time limit
   const { network, renderer, clock } = await standbyRenderer({ wakeMs: 10000, plays: false });
   await assert.rejects(
     renderer.playUrl(URL),
-    (err) => err instanceof PlaybackNotStartedError && /within 25 s/.test(err.message),
+    (err) => err instanceof PlaybackNotStartedError && /within 75 s/.test(err.message),
   );
-  assert.equal(network.actions('Play').length, 3, 'one Play and at most two more');
-  assert.ok(clock() <= 26000, `${clock()} ms`);
+  assert.ok(network.actions('Play').length >= 10, 'pressed again all along, no cap');
+  assert.ok(clock() <= 76000, `${clock()} ms`);
 });
 
 test('a playback that is still running at the time limit counts as started', async () => {
-  const { renderer } = await standbyRenderer({ wakeMs: 20000 });
+  const { renderer } = await standbyRenderer({ wakeMs: 70000 });
   assert.equal(await renderer.playUrl(URL), URL);
 });
 

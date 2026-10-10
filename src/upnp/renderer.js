@@ -71,12 +71,13 @@ export class Renderer {
     this.timeoutMs = timeoutMs;
     this.sink = null;
     // How a renderer is followed after Play (see ensurePlaying).
+    // Measured on a Denon AVR-S650H from standby: empty state up to ~12 s,
+    // then STOPPED and every Play ignored until ~50 s, PLAYING at ~57 s.
     this.playWait = {
-      timeoutMs: 25000, // a renderer in standby takes ~10 s to wake up
+      timeoutMs: 75000,
       intervalMs: 1000,
       settleMs: 10000, // a playback that ends this soon was cut by the wake-up
-      replayGapMs: 3000,
-      maxReplays: 2,
+      replayGapMs: 5000, // Play is pressed again this often while STOPPED
     };
     this.now = () => Date.now();
     this.sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
@@ -192,9 +193,10 @@ export class Renderer {
   /**
    * Play a URL now and make sure it plays. Measured on a Denon AVR-S650H in
    * standby: it accepts SetAVTransportURI and Play, answers nothing useful
-   * for about 10 s while it wakes up and switches its source, then sits
-   * STOPPED with the URI loaded: the Play was lost. And a playback started
-   * during the source switch can be cut a few seconds later.
+   * for about 12 s while it wakes up, then sits STOPPED with the URI loaded
+   * and ignores every Play (all answered 200) for another ~40 s before one
+   * finally starts it. A playback started during the source switch can also
+   * be cut a few seconds later.
    * With `verify: false`, the call returns once Play is accepted (a device
    * command must be acknowledged within 5 s): use `ensurePlaying` afterwards.
    * Resolves the URL.
@@ -207,19 +209,18 @@ export class Renderer {
 
   /**
    * Follow the renderer after Play until the playback holds: wait while it
-   * does not answer, press Play again (at most `maxReplays` times, spaced)
-   * when it sits STOPPED without having played, load the URI again if it is
+   * does not answer (or is TRANSITIONING), press Play again every
+   * `replayGapMs` while it sits STOPPED without having played, load the URI again if it is
    * no longer ours, and press Play once more if the playback stops within
    * `settleMs` of its start. Throws a PlaybackNotStartedError when nothing
    * plays within `timeoutMs`. `cancelled()` returning true stops the follow
    * (another media or a command came in the meantime: never fight it).
    */
   async ensurePlaying(url, { metadata, title, mime, cancelled = () => false } = {}) {
-    const { timeoutMs, intervalMs, settleMs, replayGapMs, maxReplays } = this.playWait;
+    const { timeoutMs, intervalMs, settleMs, replayGapMs } = this.playWait;
     const loaded = metadata ?? buildMetadata({ url, title, mime });
     const deadline = this.now() + timeoutMs;
     let lastPress = this.now();
-    let replays = 0;
     let restartedAfterDrop = false;
     let playingSince = null;
 
@@ -248,8 +249,7 @@ export class Renderer {
           restartedAfterDrop = true;
           playingSince = null;
           await press(transport);
-        } else if (replays < maxReplays && this.now() - lastPress >= replayGapMs) {
-          replays += 1;
+        } else if (this.now() - lastPress >= replayGapMs) {
           await press(transport);
         }
       }

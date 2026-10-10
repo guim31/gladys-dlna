@@ -57,8 +57,9 @@ maker._
 ## Limitations
 
 - Checked for real on a Denon AVR-S650H (playback, pause, volume, mute, stop, browsing of the
-  built-in server). A renderer in standby may take about ten seconds to start: the integration
-  follows the start for up to 25 s and presses Play again if the wake-up lost it.
+  built-in server). A renderer in standby can take up to a minute to start: the integration
+  follows every start for up to 75 s in the background, pressing Play again every 5 s while the
+  wake-up ignores it.
 - **Sonos, Samsung TV and LG webOS** have their own integrations, which do more than DLNA can
   (grouping, sources, apps). DLNA still works on them, for playing media and announcements.
 - No album art in the widget (images would need resizing in the container).

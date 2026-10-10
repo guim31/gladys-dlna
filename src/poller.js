@@ -505,7 +505,7 @@ export class RendererManager {
         // The core's "play a notification" action sends the URL of a Gladys
         // Plus text-to-speech MP3. The command is acknowledged within 5 s: the
         // playback check (and the http retry of an https URL) goes on after.
-        await this.playUrl(externalId, String(value), { title: 'Gladys', background: true });
+        await this.playUrl(externalId, String(value), { title: 'Gladys' });
         return;
       default:
         throw new Error(`Unsupported feature: ${featureKey}`);
@@ -544,20 +544,18 @@ export class RendererManager {
   }
 
   /** Play a URL (web radio, announcement); drops the queue. */
-  async playUrl(externalId, url, { title, volume, background = false } = {}) {
+  async playUrl(externalId, url, { title, volume } = {}) {
     const entry = this.entryOf(externalId);
     const renderer = await this.rendererOf(entry);
     entry.queue = null;
     entry.lastPlaying = null;
     entry.playToken += 1;
-    const token = entry.playToken;
     if (Number.isFinite(volume) && renderer.hasVolume) {
       await renderer.setVolume(volume);
     }
     this.refreshSoon(entry);
-    if (!background) {
-      return renderer.playUrl(url, { title, cancelled: () => entry.playToken !== token });
-    }
+    // Answer once the renderer accepted Play: waking from standby can take
+    // more than a minute, longer than a command or a scene may wait.
     await renderer.playUrl(url, { title, verify: false });
     this.followStart(entry, renderer, url, { title });
     return url;
@@ -565,14 +563,14 @@ export class RendererManager {
 
   /**
    * Make sure a playback started without waiting for it (a renderer waking
-   * from standby can take ~25 s, more than a command or a scene may wait):
-   * pressed again if the wake-up lost it, logged if it never starts.
+   * from standby can take more than a minute): Play pressed again while the
+   * wake-up ignores it, a clear log line if it never starts.
    */
   followStart(entry, renderer, url, options) {
     const token = entry.playToken;
     this.pending = renderer
       .ensurePlaying(url, { ...options, cancelled: () => entry.playToken !== token })
-      .catch((err) => logger.warn(`${entry.device.name}: ${err.message}`))
+      .catch((err) => logger.info(`${entry.device.name}: ${err.message}`))
       .finally(() => this.refreshSoon(entry));
   }
 

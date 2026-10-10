@@ -340,18 +340,20 @@ test('a notification is acknowledged at once, the wake-up is followed after', as
   assert.equal(presses, 2);
 });
 
-test('a scene URL that never plays fails with the reason', async () => {
+test('a scene URL answers once Play is accepted; a start that never comes is logged', async () => {
   const denon = await scriptedDenon();
-  const { manager, id, network } = denon;
-  network.onAction(
-    'http://192.0.2.10:60006/upnp/control/renderer_dvc/AVTransport',
-    'Play',
-    () => ({}),
-  );
-  await assert.rejects(
-    manager.playUrl(id, 'https://radio.example/live.mp3'),
-    /did not start playing/,
-  );
+  const { manager, id, network, state } = denon;
+  let presses = 0;
+  network.onAction('http://192.0.2.10:60006/upnp/control/renderer_dvc/AVTransport', 'Play', () => {
+    presses += 1; // accepted, ignored
+    return {};
+  });
+  const url = 'https://radio.example/live.mp3';
+  assert.equal(await manager.playUrl(id, url), url);
+  assert.equal(presses, 1, 'the action did not wait');
+  await manager.pending; // gives up after 75 s (test clock) without throwing
+  assert.equal(state.transport, 'STOPPED');
+  assert.ok(presses > 10);
 });
 
 test('a command during the follow-up of a start is never undone by it', async () => {

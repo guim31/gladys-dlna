@@ -12,10 +12,11 @@ the notes of the version's GitHub Release.
 
 ### Fixed
 
-- A renderer woken from standby (the Denon AVR-S650H loses the Play command while it wakes up)
-  now starts playing: the integration follows the start for up to 25 s, presses Play again and
-  restarts a playback cut by the source switch; when nothing plays, the "Play a URL" scene action
-  fails with a clear message instead of a silent success.
+- A renderer woken from standby now starts playing: the Denon AVR-S650H ignores Play for up to
+  about 50 s while it wakes up, so the integration follows every start for up to 75 s in the
+  background, presses Play again every 5 s while the renderer is stopped, restarts a playback cut
+  by the source switch, and logs a start that never comes. Scene actions answer as soon as the
+  renderer accepted the command.
 - An empty artist or album sent as `""` (Denon) is no longer shown as two quotes.
 
 ## [1.0.1] - 2026-10-10
