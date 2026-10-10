@@ -76,7 +76,7 @@ minutes).
     configuration to find the paths.
 
   Then choose to play everything in order, everything shuffled, or the first result only, and
-  optionally a volume. The action returns whether something was found, the number of tracks queued
+  optionally a volume. A search that takes more than 75 seconds (a huge library on a server that cannot search) stops with an error: give a narrower one, such as a folder path. The action returns whether something was found, the number of tracks queued
   and the first title, for the following actions.
 
 - **Play a URL on a DLNA renderer**: a web radio, a sound or an announcement file, by its http(s)

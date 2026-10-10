@@ -155,6 +155,11 @@ code de ce dépôt. Compléter ce fichier quand un nouveau piège est découvert
   le widget Musique les lit) ; les touches `television/*` s'y affichent en boutons poussoirs.
 - Un bouton de widget `device_feature` sur une commande poussoir reste **teinté « actif » pour
   toujours** (le cœur garde `last_value` = valeur envoyée) : passer par des actions de widget.
+- Un appareil **sans aucune fonctionnalité** est accepté de bout en bout (`setDiscoveredDevices`
+  n'exige qu'un tableau, `device.create` prend `features || []`, la Découverte affiche « aucune
+  fonctionnalité ») et il figure dans les listes `source: "devices"` : c'est le cas des serveurs.
+- Une action de scène qui parcourt un serveur doit s'arrêter **avant** son `timeout_seconds` : le
+  cœur abandonne, mais le conteneur continuerait. Échéance globale (`withDeadline`) sous ce délai.
 - `publishStates` (lot) : un état texte part dans `text`, pas dans `state`.
 - Le SDK publié (0.14.0) n'a ni `publishChangedStates` ni `/testing`, que le README de `master`
   documente déjà.

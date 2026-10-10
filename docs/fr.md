@@ -77,7 +77,7 @@ toutes les 5 minutes).
     multimédia** de la configuration aide à trouver les chemins.
 
   Choisissez ensuite de tout lire dans l'ordre, tout en aléatoire, ou le premier résultat
-  seulement, et éventuellement un volume. L'action renvoie si quelque chose a été trouvé, le nombre
+  seulement, et éventuellement un volume. Une recherche qui dure plus de 75 secondes (une très grande bibliothèque sur un serveur qui ne sait pas chercher) s'arrête sur une erreur : précisez-la, par exemple avec un chemin de dossier. L'action renvoie si quelque chose a été trouvé, le nombre
   de pistes en file et le premier titre, pour les actions suivantes.
 
 - **Lire une URL sur un lecteur DLNA** : une radio web, un son ou un fichier d'annonce, par son URL
