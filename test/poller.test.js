@@ -321,23 +321,23 @@ test('the now-playing text', () => {
   assert.equal(formatNowPlaying({ title: 'x'.repeat(500) }).length, 200);
 });
 
-test('a notification is acknowledged at once, the https retry runs after', async () => {
+test('a notification is acknowledged at once, the wake-up is followed after', async () => {
   const denon = await scriptedDenon();
   const { manager, id, state, network } = denon;
   const AV_URL = 'http://192.0.2.10:60006/upnp/control/renderer_dvc/AVTransport';
+  let presses = 0;
   network.onAction(AV_URL, 'Play', () => {
-    // Like the real Denon: an https stream is accepted and stays STOPPED.
-    if (state.uri.startsWith('http:')) state.transport = 'PLAYING';
+    // The first Play is lost while the amplifier wakes up.
+    presses += 1;
+    if (presses > 1) state.transport = 'PLAYING';
     return {};
   });
-  const renderer = await manager.rendererOf(manager.entries.get(id));
-  renderer.sleep = async () => {};
-
   await manager.command(id, RENDERER_FEATURES.NOTIFICATION, 'https://tts.example/abc.mp3');
-  assert.equal(state.uri, 'https://tts.example/abc.mp3', 'acknowledged before any retry');
+  assert.equal(state.transport, 'STOPPED', 'acknowledged before the check');
   await manager.pending;
-  assert.equal(state.uri, 'http://tts.example/abc.mp3');
+  assert.equal(state.uri, 'https://tts.example/abc.mp3');
   assert.equal(state.transport, 'PLAYING');
+  assert.equal(presses, 2);
 });
 
 test('a scene URL that never plays fails with the reason', async () => {
@@ -348,10 +348,24 @@ test('a scene URL that never plays fails with the reason', async () => {
     'Play',
     () => ({}),
   );
-  const renderer = await manager.rendererOf(manager.entries.get(id));
-  renderer.sleep = async () => {};
   await assert.rejects(
     manager.playUrl(id, 'https://radio.example/live.mp3'),
-    /may not accept https/,
+    /did not start playing/,
   );
+});
+
+test('a command during the follow-up of a start is never undone by it', async () => {
+  const denon = await scriptedDenon();
+  const { manager, id, state, network } = denon;
+  let presses = 0;
+  network.onAction('http://192.0.2.10:60006/upnp/control/renderer_dvc/AVTransport', 'Play', () => {
+    presses += 1;
+    if (presses > 1) state.transport = 'PLAYING'; // the first Play is lost (wake-up)
+    return {};
+  });
+  await manager.command(id, RENDERER_FEATURES.NOTIFICATION, 'https://tts.example/abc.mp3');
+  await manager.command(id, RENDERER_FEATURES.STOP, 1); // the user changed their mind
+  await manager.pending;
+  assert.equal(state.transport, 'STOPPED', 'the follow-up did not press Play again');
+  assert.equal(presses, 1);
 });

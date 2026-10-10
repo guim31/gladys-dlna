@@ -255,3 +255,9 @@ test('server lookups end before the core gives up on the action', () => {
   assert.ok(SEARCH_BUDGET_MS <= playMedia.timeout_seconds * 1000 - 10000);
   assert.ok(BROWSE_BUDGET_MS <= browse.timeout_seconds * 1000 - 5000);
 });
+
+test('play_url waits long enough for a renderer waking from standby', () => {
+  // ensurePlaying follows a start for up to 25 s, after Stop/SetURI/Play.
+  const playUrl = manifest.scene_actions.find((action) => action.key === 'play_url');
+  assert.ok(playUrl.timeout_seconds >= 40, `${playUrl.timeout_seconds} s`);
+});

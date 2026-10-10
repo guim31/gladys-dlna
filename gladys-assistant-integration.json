@@ -267,7 +267,7 @@
         "en": "A web radio, a sound or an announcement file, by its http(s) URL.",
         "fr": "Une radio web, un son ou un fichier d'annonce, par son URL http(s)."
       },
-      "timeout_seconds": 30,
+      "timeout_seconds": 60,
       "fields": [
         {
           "key": "renderer",

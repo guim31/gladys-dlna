@@ -57,9 +57,8 @@ maker._
 ## Limitations
 
 - Checked for real on a Denon AVR-S650H (playback, pause, volume, mute, stop, browsing of the
-  built-in server). Many renderers, the Denon included, accept an `https` stream but only play
-  `http`: an `https` URL that does not start is retried once in `http`, else the action fails with
-  a clear message.
+  built-in server). A renderer in standby may take about ten seconds to start: the integration
+  follows the start for up to 25 s and presses Play again if the wake-up lost it.
 - **Sonos, Samsung TV and LG webOS** have their own integrations, which do more than DLNA can
   (grouping, sources, apps). DLNA still works on them, for playing media and announcements.
 - No album art in the widget (images would need resizing in the container).

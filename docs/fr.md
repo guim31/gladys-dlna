@@ -121,11 +121,12 @@ complément de leur intégration.
   relit, l'arrêt arrête, et le serveur multimédia intégré se parcourt. L'ampli sort seul de veille
   sur une commande. Sa description, ses descriptions de services et ses réponses d'état sont
   rejouées par les tests.
-- **Flux https sur le Denon** : il accepte une URL https puis ne la lit jamais, alors que le même
-  flux en http démarre aussitôt. L'intégration vérifie donc que la lecture démarre vraiment ; une
-  URL https qui ne démarre pas est réessayée une fois en http, et si rien ne se lit l'action de
-  scène échoue avec un message clair (« le lecteur n'a pas démarré la lecture : il n'accepte
-  peut-être pas le https »).
+- **Un lecteur en veille peut mettre une dizaine de secondes à démarrer** : le Denon accepte le
+  média et la commande Lecture, se réveille, bascule de source, et perd la commande entre-temps.
+  L'intégration suit donc le démarrage jusqu'à 25 secondes : elle renvoie Lecture quand le lecteur
+  est réveillé mais arrêté (et recharge le média si besoin), relance une fois une lecture coupée
+  juste après son démarrage, et si rien ne se lit l'action de scène « Lire une URL » échoue avec un
+  message clair. Les flux https se lisent comme les flux http.
 - **Pas encore vérifié sur du vrai matériel** : la file d'attente et ses enchaînements sans blanc,
   la recherche réseau menée par Gladys, et la recherche sur un vrai serveur (MiniDLNA, Plex,
   Jellyfin). Ils sont couverts par des tests sur des appareils simulés, construits d'après des
@@ -139,5 +140,5 @@ complément de leur intégration.
 - **Une commande échoue avec « 701 »** (transition impossible) : le lecteur refuse cette commande
   dans son état actuel, par exemple Lecture sans rien de chargé.
 - **Un fichier ou une radio ne se lit pas** : le lecteur doit accepter son format et joindre son
-  URL lui-même. Beaucoup de lecteurs ne lisent que le `http` : l'intégration réessaie seule une URL
-  `https` en `http`, mais certains flux n'existent qu'en `https`.
+  URL lui-même. Un lecteur en veille peut mettre une dizaine de secondes à démarrer : l'intégration
+  l'attend.

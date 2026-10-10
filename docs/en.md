@@ -117,10 +117,12 @@ useful to play media from a server or announcements, next to their own integrati
   set in Gladys is the volume of the amplifier (15 in Gladys is MV15), mute is set and read back,
   stop stops, and the built-in media server is browsed. The amplifier wakes from standby by itself
   on a command. Its description, service descriptions and state answers are replayed by the tests.
-- **https streams on the Denon**: it accepts an https URL and then never plays it, while the same
-  stream in http plays at once. The integration therefore checks that playback really starts; an
-  https URL that does not start is tried once in http, and when nothing plays the scene action
-  fails with a clear message ("the renderer did not start playing: it may not accept https URLs").
+- **A renderer in standby may take about ten seconds to start**: the Denon accepts the media and
+  the Play command, wakes up, switches its source, and loses the Play meanwhile. The integration
+  therefore follows the start for up to 25 seconds: it presses Play again when the renderer is
+  awake but stopped (and loads the media again if needed), restarts once a playback cut right after
+  it started, and when nothing plays the "Play a URL" scene action fails with a clear message.
+  https streams play like http ones.
 - **Not checked on real hardware yet**: the play queue and its gapless transitions, the network
   search run by Gladys, and searching a real media server (MiniDLNA, Plex, Jellyfin). They are
   covered by tests on simulated devices built from public formats. Please report any device that
@@ -134,5 +136,4 @@ useful to play media from a server or announcements, next to their own integrati
 - **A command fails with "701"** (transition not available): the renderer refuses this command in
   its current state, for instance Play with nothing loaded.
 - **A file or a radio does not play**: the renderer must support its format, and reach its URL
-  itself. Many renderers only play `http`: the integration retries an `https` URL in `http` by
-  itself, but some streams only exist in `https`.
+  itself. A renderer in standby may take about ten seconds to start: the integration waits for it.

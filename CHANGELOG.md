@@ -12,9 +12,10 @@ the notes of the version's GitHub Release.
 
 ### Fixed
 
-- An https stream that a renderer accepts but never plays (the Denon AVR-S650H does so) is retried
-  once in http; when nothing plays, the scene action fails with a clear message instead of a silent
-  success.
+- A renderer woken from standby (the Denon AVR-S650H loses the Play command while it wakes up)
+  now starts playing: the integration follows the start for up to 25 s, presses Play again and
+  restarts a playback cut by the source switch; when nothing plays, the "Play a URL" scene action
+  fails with a clear message instead of a silent success.
 - An empty artist or album sent as `""` (Denon) is no longer shown as two quotes.
 
 ## [1.0.1] - 2026-10-10

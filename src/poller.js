@@ -154,6 +154,7 @@ export class RendererManager {
           timer: null,
           running: null,
           soon: false,
+          playToken: 0,
         });
         this.schedule(this.entries.get(externalId), 0);
       }
@@ -377,6 +378,7 @@ export class RendererManager {
   // --- Queue ------------------------------------------------------------------
 
   async startTrack(entry, renderer, track) {
+    entry.playToken += 1;
     entry.queue.preloaded = false;
     entry.queue.startedAt = this.now();
     entry.lastPlaying = null;
@@ -473,6 +475,8 @@ export class RendererManager {
   async command(externalId, featureKey, value) {
     const entry = this.entryOf(externalId);
     const renderer = await this.rendererOf(entry);
+    // A command ends any follow-up of a playback start (see followStart).
+    entry.playToken += 1;
     switch (featureKey) {
       case RENDERER_FEATURES.PLAY:
         await renderer.play();
@@ -545,19 +549,31 @@ export class RendererManager {
     const renderer = await this.rendererOf(entry);
     entry.queue = null;
     entry.lastPlaying = null;
+    entry.playToken += 1;
+    const token = entry.playToken;
     if (Number.isFinite(volume) && renderer.hasVolume) {
       await renderer.setVolume(volume);
     }
     this.refreshSoon(entry);
     if (!background) {
-      return renderer.playUrl(url, { title });
+      return renderer.playUrl(url, { title, cancelled: () => entry.playToken !== token });
     }
     await renderer.playUrl(url, { title, verify: false });
+    this.followStart(entry, renderer, url, { title });
+    return url;
+  }
+
+  /**
+   * Make sure a playback started without waiting for it (a renderer waking
+   * from standby can take ~25 s, more than a command or a scene may wait):
+   * pressed again if the wake-up lost it, logged if it never starts.
+   */
+  followStart(entry, renderer, url, options) {
+    const token = entry.playToken;
     this.pending = renderer
-      .ensurePlaying(url, { title })
+      .ensurePlaying(url, { ...options, cancelled: () => entry.playToken !== token })
       .catch((err) => logger.warn(`${entry.device.name}: ${err.message}`))
       .finally(() => this.refreshSoon(entry));
-    return url;
   }
 
   /**
@@ -577,6 +593,9 @@ export class RendererManager {
     if (shuffled) shuffle(tracks, this.random);
     entry.queue = { tracks, index: 0, preloaded: false, noPreload: false, startedAt: this.now() };
     await this.startTrack(entry, renderer, tracks[0]);
+    // The search already used most of the scene's 90 s: the first track is
+    // followed in the background, the next ones need no check.
+    this.followStart(entry, renderer, tracks[0].uri, { metadata: tracks[0].metadata });
     this.refreshSoon(entry);
     return { track: tracks[0], count: tracks.length };
   }

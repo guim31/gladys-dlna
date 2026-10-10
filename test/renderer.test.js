@@ -10,7 +10,6 @@ import { Registry } from '../src/registry.js';
 import {
   PlaybackNotStartedError,
   describeMedia,
-  httpVariant,
   playbackOf,
   PLAYBACK,
 } from '../src/upnp/renderer.js';
@@ -100,16 +99,9 @@ test('a renderer without mute does not ask for it', async () => {
 test('playUrl stops a playing renderer, sets the URI with metadata, then plays', async () => {
   const { network, renderer } = await rendererOf('denon-avr-s650h');
   network.onAction(DENON_AV, 'GetTransportInfo', () => ({ CurrentTransportState: 'PLAYING' }));
-  await renderer.playUrl('http://radio.example/live.aac', { title: 'Radio & co' });
+  await renderer.playUrl('http://radio.example/live.aac', { title: 'Radio & co', verify: false });
   const actions = network.calls.map((call) => call.action);
-  // Then the playback check: already PLAYING.
-  assert.deepEqual(actions, [
-    'GetTransportInfo',
-    'Stop',
-    'SetAVTransportURI',
-    'Play',
-    'GetTransportInfo',
-  ]);
+  assert.deepEqual(actions, ['GetTransportInfo', 'Stop', 'SetAVTransportURI', 'Play']);
   const set = network.actions('SetAVTransportURI')[0].args;
   assert.equal(set.InstanceID, '0');
   assert.equal(set.CurrentURI, 'http://radio.example/live.aac');
@@ -125,86 +117,117 @@ test('playUrl does not stop a stopped renderer', async () => {
   assert.equal(network.actions('Stop').length, 0);
 });
 
-/** A renderer that, like the real Denon, accepts https URLs but only plays http. */
-async function httpOnlyRenderer({ playsHttp = true } = {}) {
+/**
+ * The Denon as measured from standby: it accepts SetAVTransportURI and Play,
+ * answers an empty transport state while it wakes up (`wakeMs`), and the
+ * Play sent meanwhile is lost; it then sits STOPPED with the URI loaded. A
+ * playback can also be cut once, `dropAfterMs` after it started.
+ */
+async function standbyRenderer({
+  wakeMs = 0,
+  dropAfterMs = null,
+  plays = true,
+  forgetsUri = false,
+} = {}) {
   const { network, renderer } = await rendererOf('denon-avr-s650h');
-  const state = { uri: '', transport: 'STOPPED' };
-  network.onAction(DENON_AV, 'GetTransportInfo', () => ({
-    CurrentTransportState: state.transport,
-  }));
+  let clock = 0;
+  renderer.now = () => clock;
+  renderer.sleep = async (ms) => {
+    clock += ms;
+  };
+  const state = {
+    uri: '',
+    transport: 'STOPPED',
+    playingAt: null,
+    drops: dropAfterMs === null ? 0 : 1,
+  };
+  const awake = () => clock >= wakeMs;
+  let woken = false;
+  const update = () => {
+    if (awake() && !woken) {
+      woken = true;
+      if (forgetsUri) state.uri = ''; // the source switch unloaded it
+    }
+    if (
+      state.transport === 'PLAYING' &&
+      state.drops > 0 &&
+      clock - state.playingAt >= dropAfterMs
+    ) {
+      state.transport = 'STOPPED';
+      state.drops -= 1;
+    }
+  };
+  network.onAction(DENON_AV, 'GetTransportInfo', () => {
+    update();
+    return { CurrentTransportState: awake() ? state.transport : '' };
+  });
+  network.onAction(DENON_AV, 'GetMediaInfo', () => ({ CurrentURI: awake() ? state.uri : '' }));
   network.onAction(DENON_AV, 'SetAVTransportURI', (args) => {
     state.uri = args.CurrentURI;
     state.transport = 'STOPPED';
     return {};
   });
   network.onAction(DENON_AV, 'Play', () => {
-    // Accepted (200) in every case; only an http stream really starts.
-    if (playsHttp && state.uri.startsWith('http:')) state.transport = 'PLAYING';
+    update();
+    if (awake() && plays && state.uri) {
+      state.transport = 'PLAYING';
+      state.playingAt = clock;
+    }
     return {};
   });
-  renderer.playWait = { timeoutMs: 2000, intervalMs: 500 };
-  const waits = [];
-  renderer.sleep = async (ms) => {
-    waits.push(ms);
-  };
-  return { network, renderer, state, waits };
+  return { network, renderer, state, clock: () => clock };
 }
 
-test('an https stream that does not start is retried once in http', async () => {
-  const { network, renderer, state, waits } = await httpOnlyRenderer();
-  const played = await renderer.playUrl('https://icecast.radiofrance.fr/fip-midfi.mp3', {
-    title: 'FIP',
-  });
-  assert.equal(played, 'http://icecast.radiofrance.fr/fip-midfi.mp3');
+const URL = 'https://icecast.radiofrance.fr/fip-midfi.mp3';
+
+test('a renderer already on plays at once, https included, with one Play', async () => {
+  const { network, renderer, state } = await standbyRenderer();
+  assert.equal(await renderer.playUrl(URL, { title: 'FIP' }), URL);
   assert.equal(state.transport, 'PLAYING');
-  const uris = network.actions('SetAVTransportURI').map((call) => call.args.CurrentURI);
-  assert.deepEqual(uris, [
-    'https://icecast.radiofrance.fr/fip-midfi.mp3',
-    'http://icecast.radiofrance.fr/fip-midfi.mp3',
-  ]);
-  // The metadata follows the URL actually played.
-  const [item] = parseDidl(network.actions('SetAVTransportURI')[1].args.CurrentURIMetaData).items;
-  assert.equal(item.resources[0].uri, 'http://icecast.radiofrance.fr/fip-midfi.mp3');
-  assert.equal(item.title, 'FIP');
-  assert.equal(waits.length, 4, 'the https attempt was given its whole time');
+  assert.equal(network.actions('Play').length, 1);
+  assert.deepEqual(
+    network.actions('SetAVTransportURI').map((call) => call.args.CurrentURI),
+    [URL],
+    'the https URL is kept as it is',
+  );
 });
 
-test('a URL that never plays ends with a clear error', async () => {
-  const https = await httpOnlyRenderer({ playsHttp: false });
+test('a renderer waking from standby: the lost Play is pressed again', async () => {
+  const { network, renderer, state, clock } = await standbyRenderer({ wakeMs: 10000 });
+  assert.equal(await renderer.playUrl(URL), URL);
+  assert.equal(state.transport, 'PLAYING');
+  assert.equal(network.actions('Play').length, 2);
+  assert.equal(network.actions('SetAVTransportURI').length, 1, 'the URI was still loaded');
+  assert.ok(clock() <= 25000, `${clock()} ms`);
+});
+
+test('a URI unloaded by the wake-up is loaded again', async () => {
+  const { network, renderer, state } = await standbyRenderer({ wakeMs: 8000, forgetsUri: true });
+  await renderer.playUrl(URL);
+  assert.equal(state.transport, 'PLAYING');
+  assert.equal(network.actions('SetAVTransportURI').length, 2);
+});
+
+test('a playback cut right after it started is restarted once', async () => {
+  const { network, renderer, state } = await standbyRenderer({ dropAfterMs: 3000 });
+  await renderer.playUrl(URL);
+  assert.equal(state.transport, 'PLAYING');
+  assert.equal(network.actions('Play').length, 2);
+});
+
+test('a renderer that never plays ends with a clear error, within the time limit', async () => {
+  const { network, renderer, clock } = await standbyRenderer({ wakeMs: 10000, plays: false });
   await assert.rejects(
-    https.renderer.playUrl('https://radio.example/live.mp3'),
-    (err) => err instanceof PlaybackNotStartedError && /may not accept https/.test(err.message),
+    renderer.playUrl(URL),
+    (err) => err instanceof PlaybackNotStartedError && /within 25 s/.test(err.message),
   );
-  assert.equal(https.network.actions('SetAVTransportURI').length, 2);
-
-  const http = await httpOnlyRenderer({ playsHttp: false });
-  await assert.rejects(
-    http.renderer.playUrl('http://radio.example/live.ogg'),
-    /did not start playing this URL/,
-  );
-  assert.equal(http.network.actions('SetAVTransportURI').length, 1, 'no retry for http');
+  assert.equal(network.actions('Play').length, 3, 'one Play and at most two more');
+  assert.ok(clock() <= 26000, `${clock()} ms`);
 });
 
-test('a renderer that starts after a while is waited for', async () => {
-  const { network, renderer } = await rendererOf('denon-avr-s650h');
-  const answers = ['STOPPED', 'TRANSITIONING', 'TRANSITIONING', 'PLAYING'];
-  network.onAction(DENON_AV, 'GetTransportInfo', () => ({
-    CurrentTransportState: answers.shift() ?? 'PLAYING',
-  }));
-  renderer.sleep = async () => {};
-  assert.equal(
-    await renderer.playUrl('https://radio.example/live.mp3'),
-    'https://radio.example/live.mp3',
-  );
-  assert.equal(network.actions('SetAVTransportURI').length, 1);
-});
-
-test('httpVariant', () => {
-  assert.equal(httpVariant('https://h.example/a?b=1'), 'http://h.example/a?b=1');
-  assert.equal(httpVariant('https://h.example:443/a'), 'http://h.example/a');
-  assert.equal(httpVariant('https://h.example:8443/a'), 'http://h.example:8443/a');
-  assert.equal(httpVariant('http://h.example/a'), null);
-  assert.equal(httpVariant('nope'), null);
+test('a playback that is still running at the time limit counts as started', async () => {
+  const { renderer } = await standbyRenderer({ wakeMs: 20000 });
+  assert.equal(await renderer.playUrl(URL), URL);
 });
 
 test('the Denon empty artist and album ("") read as empty', () => {

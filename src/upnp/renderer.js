@@ -6,7 +6,6 @@
 import { soapCall } from './soap.js';
 import { SERVICE_TYPES, findService } from './description.js';
 import { buildMetadata, parseDidl, parseDuration } from './didl.js';
-import { escapeXml } from './xml.js';
 
 const INSTANCE = { InstanceID: '0' };
 const MASTER = { InstanceID: '0', Channel: 'Master' };
@@ -46,27 +45,11 @@ export function describeMedia(positionInfo = {}, mediaInfo = {}) {
   };
 }
 
-/** The http form of an https URL, or null. */
-export function httpVariant(url) {
-  try {
-    const parsed = new URL(url);
-    if (parsed.protocol !== 'https:') return null;
-    parsed.protocol = 'http:';
-    if (parsed.port === '443') parsed.port = '';
-    return parsed.href;
-  } catch {
-    return null;
-  }
-}
-
 export class PlaybackNotStartedError extends Error {
-  constructor(url) {
+  constructor(seconds) {
     super(
-      String(url).startsWith('https:')
-        ? 'The renderer did not start playing: it may not accept https URLs ' +
-            '(nor the http address of this stream)'
-        : 'The renderer did not start playing this URL: format not supported, ' +
-            'or URL not reachable from the renderer',
+      `The renderer did not start playing within ${seconds} s: still waking up, ` +
+        'format not supported, or URL not reachable from the renderer',
     );
     this.name = 'PlaybackNotStartedError';
   }
@@ -87,8 +70,15 @@ export class Renderer {
     this.fetchImpl = fetchImpl;
     this.timeoutMs = timeoutMs;
     this.sink = null;
-    // How long a renderer is given to reach PLAYING after Play.
-    this.playWait = { timeoutMs: 6000, intervalMs: 500 };
+    // How a renderer is followed after Play (see ensurePlaying).
+    this.playWait = {
+      timeoutMs: 25000, // a renderer in standby takes ~10 s to wake up
+      intervalMs: 1000,
+      settleMs: 10000, // a playback that ends this soon was cut by the wake-up
+      replayGapMs: 3000,
+      maxReplays: 2,
+    };
+    this.now = () => Date.now();
     this.sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
   }
 
@@ -186,47 +176,89 @@ export class Renderer {
     await this.play();
   }
 
-  /** Whether the renderer reaches PLAYING within `playWait.timeoutMs`. */
-  async waitForPlayback() {
-    const { timeoutMs, intervalMs } = this.playWait;
-    for (let waited = 0; ; waited += intervalMs) {
-      try {
-        const { CurrentTransportState } = await this.av('GetTransportInfo');
-        if (CurrentTransportState === 'PLAYING') return true;
-      } catch {
-        // A renderer busy loading may not answer: ask again.
-      }
-      if (waited >= timeoutMs) return false;
-      await this.sleep(intervalMs);
+  /** The transport state and the loaded URI, or null while the renderer
+   * cannot answer (waking up). */
+  async readTransport() {
+    try {
+      const { CurrentTransportState } = await this.av('GetTransportInfo');
+      if (!CurrentTransportState) return null;
+      const media = await this.av('GetMediaInfo').catch(() => ({}));
+      return { state: CurrentTransportState, uri: media.CurrentURI ?? '' };
+    } catch {
+      return null;
     }
   }
 
   /**
-   * Play a URL now and make sure it plays. A renderer may accept the URL and
-   * Play (both answer 200) yet stay STOPPED: the real Denon AVR-S650H does so
-   * with every https stream, and plays the same stream in http. So an https
-   * URL that does not start is tried once in http; when nothing plays, the
-   * caller gets a clear error instead of a silent success.
+   * Play a URL now and make sure it plays. Measured on a Denon AVR-S650H in
+   * standby: it accepts SetAVTransportURI and Play, answers nothing useful
+   * for about 10 s while it wakes up and switches its source, then sits
+   * STOPPED with the URI loaded: the Play was lost. And a playback started
+   * during the source switch can be cut a few seconds later.
    * With `verify: false`, the call returns once Play is accepted (a device
    * command must be acknowledged within 5 s): use `ensurePlaying` afterwards.
-   * Resolves the URL that plays.
+   * Resolves the URL.
    */
-  async playUrl(url, { metadata, title, mime, verify = true } = {}) {
-    await this.startUrl(url, metadata ?? buildMetadata({ url, title, mime }));
-    return verify ? this.ensurePlaying(url, { metadata, title, mime }) : url;
+  async playUrl(url, { metadata, title, mime, verify = true, cancelled } = {}) {
+    const loaded = metadata ?? buildMetadata({ url, title, mime });
+    await this.startUrl(url, loaded);
+    return verify ? this.ensurePlaying(url, { metadata: loaded, cancelled }) : url;
   }
 
-  async ensurePlaying(url, { metadata, title, mime } = {}) {
-    if (await this.waitForPlayback()) return url;
-    const fallback = httpVariant(url);
-    if (fallback) {
-      const fallbackMetadata = metadata
-        ? metadata.split(escapeXml(url)).join(escapeXml(fallback))
-        : buildMetadata({ url: fallback, title, mime });
-      await this.startUrl(fallback, fallbackMetadata);
-      if (await this.waitForPlayback()) return fallback;
+  /**
+   * Follow the renderer after Play until the playback holds: wait while it
+   * does not answer, press Play again (at most `maxReplays` times, spaced)
+   * when it sits STOPPED without having played, load the URI again if it is
+   * no longer ours, and press Play once more if the playback stops within
+   * `settleMs` of its start. Throws a PlaybackNotStartedError when nothing
+   * plays within `timeoutMs`. `cancelled()` returning true stops the follow
+   * (another media or a command came in the meantime: never fight it).
+   */
+  async ensurePlaying(url, { metadata, title, mime, cancelled = () => false } = {}) {
+    const { timeoutMs, intervalMs, settleMs, replayGapMs, maxReplays } = this.playWait;
+    const loaded = metadata ?? buildMetadata({ url, title, mime });
+    const deadline = this.now() + timeoutMs;
+    let lastPress = this.now();
+    let replays = 0;
+    let restartedAfterDrop = false;
+    let playingSince = null;
+
+    const press = async (transport) => {
+      lastPress = this.now();
+      try {
+        if (transport.uri !== url) await this.setUri(url, loaded);
+        await this.play();
+      } catch {
+        // Still busy: the next round looks again.
+      }
+    };
+
+    for (;;) {
+      if (cancelled()) return url;
+      const transport = await this.readTransport();
+      if (cancelled()) return url;
+      const state = playbackOf(transport?.state);
+      if (state === PLAYBACK.PLAYING) {
+        playingSince ??= this.now();
+        if (this.now() - playingSince >= settleMs) return url;
+      } else if (state === PLAYBACK.STOPPED) {
+        if (playingSince !== null) {
+          // Started, then cut (the end of the source switch): once more.
+          if (restartedAfterDrop) throw new PlaybackNotStartedError(timeoutMs / 1000);
+          restartedAfterDrop = true;
+          playingSince = null;
+          await press(transport);
+        } else if (replays < maxReplays && this.now() - lastPress >= replayGapMs) {
+          replays += 1;
+          await press(transport);
+        }
+      }
+      if (this.now() >= deadline) {
+        if (playingSince !== null) return url;
+        throw new PlaybackNotStartedError(timeoutMs / 1000);
+      }
+      await this.sleep(intervalMs);
     }
-    throw new PlaybackNotStartedError(url);
   }
 
   /** Volume as a percentage of the range the renderer declares. */

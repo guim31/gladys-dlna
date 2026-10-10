@@ -137,6 +137,16 @@ export async function scriptedDenon({ extraDevices = [] } = {}) {
 
   const timers = fakeTimers();
   let clock = 1_000_000;
+  // The playback check of the renderers runs on the test clock, instantly.
+  const clientOf = registry.clientOf.bind(registry);
+  registry.clientOf = (info) => {
+    const client = clientOf(info);
+    client.now = () => clock;
+    client.sleep = async (ms) => {
+      clock += ms;
+    };
+    return client;
+  };
   const displayChanges = [];
   const manager = new RendererManager({
     gladys,
