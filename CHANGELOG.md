@@ -10,6 +10,8 @@ the notes of the version's GitHub Release.
 
 ## [Unreleased]
 
+## [1.0.1] - 2026-10-10
+
 ### Added
 
 - DLNA / UPnP AV renderers (TV, amplifier, speaker): play, pause, stop, previous, next, volume,
@@ -28,4 +30,5 @@ the notes of the version's GitHub Release.
 
 - The demo devices, actions, scenes and widget of the template.
 
-[Unreleased]: https://github.com/guim31/gladys-dlna/commits/main
+[Unreleased]: https://github.com/guim31/gladys-dlna/compare/v1.0.1...HEAD
+[1.0.1]: https://github.com/guim31/gladys-dlna/releases/tag/v1.0.1
