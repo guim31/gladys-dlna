@@ -112,16 +112,24 @@ useful to play media from a server or announcements, next to their own integrati
 
 ## What has been checked on real hardware
 
-- **Checked against a real Denon AVR-S650H** (answers captured on the amplifier, stopped): its
-  description (renderer and media server embedded in a Denon root device, port 60006), its four
-  service descriptions, and its answers to the state requests (transport, position, media, volume,
-  mute, supported formats). The tests replay them: the amplifier is discovered with all its
-  features, volume and mute are read correctly.
-- **Not checked on real hardware yet**: the commands (play, pause, stop, volume, mute), playing a
-  URL or a server track on the Denon, the queue and its gapless transitions, the network search run
-  by Gladys, and searching a real media server (MiniDLNA, Plex, Jellyfin). They are covered by tests
-  on simulated devices built from public formats. Please report any device that misbehaves, with
-  the logs of the integration.
+- **Checked for real on a Denon AVR-S650H** (playback, pause, volume, mute, stop, browsing of the
+  built-in server): an http stream plays, the position advances, pause and resume work, the volume
+  set in Gladys is the volume of the amplifier (15 in Gladys is MV15), mute is set and read back,
+  stop stops, and the built-in media server is browsed. The amplifier wakes from standby by itself
+  on a command. Its description, service descriptions and state answers are replayed by the tests.
+- **A renderer in standby can take up to a minute to start**: measured on the Denon, it accepts
+  the media and the Play command, gives no usable answer for about 12 seconds while it wakes up,
+  then stays stopped and ignores Play for about 40 more seconds before it starts. The integration
+  therefore follows every start for up to 75 seconds, in the background: it waits while the
+  renderer does not answer, presses Play again every 5 seconds while it is stopped (and loads the
+  media again if needed), restarts once a playback cut right after it started, and stops following
+  as soon as another command or media comes in. Scene actions answer as soon as the renderer
+  accepted the command; a start that never comes is written in the logs of the integration. https
+  streams play like http ones.
+- **Not checked on real hardware yet**: the play queue and its gapless transitions, the network
+  search run by Gladys, and searching a real media server (MiniDLNA, Plex, Jellyfin). They are
+  covered by tests on simulated devices built from public formats. Please report any device that
+  misbehaves, with the logs of the integration.
 
 ## Troubleshooting
 
@@ -131,4 +139,4 @@ useful to play media from a server or announcements, next to their own integrati
 - **A command fails with "701"** (transition not available): the renderer refuses this command in
   its current state, for instance Play with nothing loaded.
 - **A file or a radio does not play**: the renderer must support its format, and reach its URL
-  itself (an `https` radio may not play on an old renderer: try its `http` address).
+  itself. A renderer in standby may take about ten seconds to start: the integration waits for it.

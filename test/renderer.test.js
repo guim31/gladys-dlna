@@ -7,7 +7,12 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { createFakeNetwork, soapFault } from './helpers/fakeNetwork.js';
 import { Registry } from '../src/registry.js';
-import { describeMedia, playbackOf, PLAYBACK } from '../src/upnp/renderer.js';
+import {
+  PlaybackNotStartedError,
+  describeMedia,
+  playbackOf,
+  PLAYBACK,
+} from '../src/upnp/renderer.js';
 import { parseDidl } from '../src/upnp/didl.js';
 
 const DENON_AV = 'http://192.0.2.10:60006/upnp/control/renderer_dvc/AVTransport';
@@ -94,7 +99,7 @@ test('a renderer without mute does not ask for it', async () => {
 test('playUrl stops a playing renderer, sets the URI with metadata, then plays', async () => {
   const { network, renderer } = await rendererOf('denon-avr-s650h');
   network.onAction(DENON_AV, 'GetTransportInfo', () => ({ CurrentTransportState: 'PLAYING' }));
-  await renderer.playUrl('http://radio.example/live.aac', { title: 'Radio & co' });
+  await renderer.playUrl('http://radio.example/live.aac', { title: 'Radio & co', verify: false });
   const actions = network.calls.map((call) => call.action);
   assert.deepEqual(actions, ['GetTransportInfo', 'Stop', 'SetAVTransportURI', 'Play']);
   const set = network.actions('SetAVTransportURI')[0].args;
@@ -108,8 +113,135 @@ test('playUrl stops a playing renderer, sets the URI with metadata, then plays',
 
 test('playUrl does not stop a stopped renderer', async () => {
   const { network, renderer } = await rendererOf('denon-avr-s650h');
-  await renderer.playUrl('http://radio.example/live.mp3');
+  await renderer.playUrl('http://radio.example/live.mp3', { verify: false });
   assert.equal(network.actions('Stop').length, 0);
+});
+
+/**
+ * The Denon as measured from standby: it accepts SetAVTransportURI and Play,
+ * answers an empty transport state while it wakes up (`wakeMs`), and the
+ * Play sent meanwhile is lost; it then sits STOPPED with the URI loaded. A
+ * playback can also be cut once, `dropAfterMs` after it started.
+ */
+async function standbyRenderer({
+  wakeMs = 0,
+  ignoresPlayUntilMs = 0,
+  dropAfterMs = null,
+  plays = true,
+  forgetsUri = false,
+} = {}) {
+  const { network, renderer } = await rendererOf('denon-avr-s650h');
+  let clock = 0;
+  renderer.now = () => clock;
+  renderer.sleep = async (ms) => {
+    clock += ms;
+  };
+  const state = {
+    uri: '',
+    transport: 'STOPPED',
+    playingAt: null,
+    drops: dropAfterMs === null ? 0 : 1,
+  };
+  const awake = () => clock >= wakeMs;
+  let woken = false;
+  const update = () => {
+    if (awake() && !woken) {
+      woken = true;
+      if (forgetsUri) state.uri = ''; // the source switch unloaded it
+    }
+    if (
+      state.transport === 'PLAYING' &&
+      state.drops > 0 &&
+      clock - state.playingAt >= dropAfterMs
+    ) {
+      state.transport = 'STOPPED';
+      state.drops -= 1;
+    }
+  };
+  network.onAction(DENON_AV, 'GetTransportInfo', () => {
+    update();
+    return { CurrentTransportState: awake() ? state.transport : '' };
+  });
+  network.onAction(DENON_AV, 'GetMediaInfo', () => ({ CurrentURI: awake() ? state.uri : '' }));
+  network.onAction(DENON_AV, 'SetAVTransportURI', (args) => {
+    state.uri = args.CurrentURI;
+    state.transport = 'STOPPED';
+    return {};
+  });
+  network.onAction(DENON_AV, 'Play', () => {
+    update();
+    if (awake() && plays && state.uri && clock >= ignoresPlayUntilMs) {
+      state.transport = 'PLAYING';
+      state.playingAt = clock;
+    }
+    return {};
+  });
+  return { network, renderer, state, clock: () => clock };
+}
+
+const URL = 'https://icecast.radiofrance.fr/fip-midfi.mp3';
+
+test('a renderer already on plays at once, https included, with one Play', async () => {
+  const { network, renderer, state } = await standbyRenderer();
+  assert.equal(await renderer.playUrl(URL, { title: 'FIP' }), URL);
+  assert.equal(state.transport, 'PLAYING');
+  assert.equal(network.actions('Play').length, 1);
+  assert.deepEqual(
+    network.actions('SetAVTransportURI').map((call) => call.args.CurrentURI),
+    [URL],
+    'the https URL is kept as it is',
+  );
+});
+
+test('the measured Denon wake-up: empty, then Play ignored ~40 s, then it plays', async () => {
+  const { network, renderer, state, clock } = await standbyRenderer({
+    wakeMs: 12000,
+    ignoresPlayUntilMs: 51000,
+  });
+  assert.equal(await renderer.playUrl(URL), URL);
+  assert.equal(state.transport, 'PLAYING');
+  const presses = network.actions('Play').length;
+  assert.ok(presses >= 8, `Play pressed ${presses} times, every 5 s while STOPPED`);
+  assert.equal(network.actions('SetAVTransportURI').length, 1, 'the URI was still loaded');
+  assert.ok(clock() <= 75000, `${clock()} ms`);
+});
+
+test('a URI unloaded by the wake-up is loaded again', async () => {
+  const { network, renderer, state } = await standbyRenderer({ wakeMs: 8000, forgetsUri: true });
+  await renderer.playUrl(URL);
+  assert.equal(state.transport, 'PLAYING');
+  assert.equal(network.actions('SetAVTransportURI').length, 2);
+});
+
+test('a playback cut right after it started is restarted once', async () => {
+  const { network, renderer, state } = await standbyRenderer({ dropAfterMs: 3000 });
+  await renderer.playUrl(URL);
+  assert.equal(state.transport, 'PLAYING');
+  assert.equal(network.actions('Play').length, 2);
+});
+
+test('a renderer that never plays ends with a clear error, within the time limit', async () => {
+  const { network, renderer, clock } = await standbyRenderer({ wakeMs: 10000, plays: false });
+  await assert.rejects(
+    renderer.playUrl(URL),
+    (err) => err instanceof PlaybackNotStartedError && /within 75 s/.test(err.message),
+  );
+  assert.ok(network.actions('Play').length >= 10, 'pressed again all along, no cap');
+  assert.ok(clock() <= 76000, `${clock()} ms`);
+});
+
+test('a playback that is still running at the time limit counts as started', async () => {
+  const { renderer } = await standbyRenderer({ wakeMs: 70000 });
+  assert.equal(await renderer.playUrl(URL), URL);
+});
+
+test('the Denon empty artist and album ("") read as empty', () => {
+  const metadata =
+    '<DIDL-Lite xmlns:dc="http://purl.org/dc/elements/1.1/" xmlns:upnp="urn:schemas-upnp-org:metadata-1-0/upnp/">' +
+    '<item><dc:title>fip-midfi.mp3</dc:title><upnp:artist>""</upnp:artist>' +
+    '<upnp:album> "" </upnp:album><dc:creator>\'\'</dc:creator></item></DIDL-Lite>';
+  const media = describeMedia({ TrackMetaData: metadata, TrackURI: 'http://x' }, {});
+  assert.deepEqual(media, { title: 'fip-midfi.mp3', artist: '', album: '', uri: 'http://x' });
 });
 
 test('a refused action throws with the UPnP error', async () => {

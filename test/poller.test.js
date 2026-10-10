@@ -320,3 +320,54 @@ test('the now-playing text', () => {
   assert.equal(formatNowPlaying({}), NOTHING_PLAYING);
   assert.equal(formatNowPlaying({ title: 'x'.repeat(500) }).length, 200);
 });
+
+test('a notification is acknowledged at once, the wake-up is followed after', async () => {
+  const denon = await scriptedDenon();
+  const { manager, id, state, network } = denon;
+  const AV_URL = 'http://192.0.2.10:60006/upnp/control/renderer_dvc/AVTransport';
+  let presses = 0;
+  network.onAction(AV_URL, 'Play', () => {
+    // The first Play is lost while the amplifier wakes up.
+    presses += 1;
+    if (presses > 1) state.transport = 'PLAYING';
+    return {};
+  });
+  await manager.command(id, RENDERER_FEATURES.NOTIFICATION, 'https://tts.example/abc.mp3');
+  assert.equal(state.transport, 'STOPPED', 'acknowledged before the check');
+  await manager.pending;
+  assert.equal(state.uri, 'https://tts.example/abc.mp3');
+  assert.equal(state.transport, 'PLAYING');
+  assert.equal(presses, 2);
+});
+
+test('a scene URL answers once Play is accepted; a start that never comes is logged', async () => {
+  const denon = await scriptedDenon();
+  const { manager, id, network, state } = denon;
+  let presses = 0;
+  network.onAction('http://192.0.2.10:60006/upnp/control/renderer_dvc/AVTransport', 'Play', () => {
+    presses += 1; // accepted, ignored
+    return {};
+  });
+  const url = 'https://radio.example/live.mp3';
+  assert.equal(await manager.playUrl(id, url), url);
+  assert.equal(presses, 1, 'the action did not wait');
+  await manager.pending; // gives up after 75 s (test clock) without throwing
+  assert.equal(state.transport, 'STOPPED');
+  assert.ok(presses > 10);
+});
+
+test('a command during the follow-up of a start is never undone by it', async () => {
+  const denon = await scriptedDenon();
+  const { manager, id, state, network } = denon;
+  let presses = 0;
+  network.onAction('http://192.0.2.10:60006/upnp/control/renderer_dvc/AVTransport', 'Play', () => {
+    presses += 1;
+    if (presses > 1) state.transport = 'PLAYING'; // the first Play is lost (wake-up)
+    return {};
+  });
+  await manager.command(id, RENDERER_FEATURES.NOTIFICATION, 'https://tts.example/abc.mp3');
+  await manager.command(id, RENDERER_FEATURES.STOP, 1); // the user changed their mind
+  await manager.pending;
+  assert.equal(state.transport, 'STOPPED', 'the follow-up did not press Play again');
+  assert.equal(presses, 1);
+});

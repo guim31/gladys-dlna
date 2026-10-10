@@ -115,17 +115,26 @@ complément de leur intégration.
 
 ## Ce qui a été vérifié sur du vrai matériel
 
-- **Vérifié sur un vrai Denon AVR-S650H** (réponses capturées sur l'ampli, à l'arrêt) : sa
-  description (lecteur et serveur multimédia intégrés dans un appareil racine Denon, port 60006),
-  ses quatre descriptions de services, et ses réponses aux requêtes d'état (transport, position,
-  média, volume, sourdine, formats acceptés). Les tests les rejouent : l'ampli est découvert avec
-  toutes ses fonctionnalités, volume et sourdine sont lus correctement.
-- **Pas encore vérifié sur du vrai matériel** : les commandes (lecture, pause, stop, volume,
-  sourdine), la lecture d'une URL ou d'une piste de serveur sur le Denon, la file d'attente et ses
-  enchaînements sans blanc, la recherche réseau menée par Gladys, et la recherche sur un vrai
-  serveur (MiniDLNA, Plex, Jellyfin). Ils sont couverts par des tests sur des appareils simulés,
-  construits d'après des formats publics. Signalez tout appareil qui se comporte mal, avec les logs
-  de l'intégration.
+- **Vérifié en réel sur un Denon AVR-S650H** (lecture, pause, volume, sourdine, arrêt, parcours du
+  serveur intégré) : un flux http se lit, la position avance, pause et reprise fonctionnent, le
+  volume réglé dans Gladys est celui de l'ampli (15 dans Gladys = MV15), la sourdine se règle et se
+  relit, l'arrêt arrête, et le serveur multimédia intégré se parcourt. L'ampli sort seul de veille
+  sur une commande. Sa description, ses descriptions de services et ses réponses d'état sont
+  rejouées par les tests.
+- **Un lecteur en veille peut mettre jusqu'à une minute à démarrer** : mesuré sur le Denon, il
+  accepte le média et la commande Lecture, ne donne aucune réponse utile pendant une douzaine de
+  secondes le temps de se réveiller, puis reste arrêté et ignore Lecture encore une quarantaine de
+  secondes avant de démarrer. L'intégration suit donc chaque démarrage jusqu'à 75 secondes, en
+  arrière-plan : elle attend tant que le lecteur ne répond pas, renvoie Lecture toutes les 5
+  secondes tant qu'il est arrêté (et recharge le média si besoin), relance une fois une lecture
+  coupée juste après son démarrage, et cesse dès qu'une autre commande ou un autre média arrive.
+  Les actions de scène répondent dès que le lecteur a accepté la commande ; un démarrage qui ne
+  vient jamais est noté dans les logs de l'intégration. Les flux https se lisent comme les flux
+  http.
+- **Pas encore vérifié sur du vrai matériel** : la file d'attente et ses enchaînements sans blanc,
+  la recherche réseau menée par Gladys, et la recherche sur un vrai serveur (MiniDLNA, Plex,
+  Jellyfin). Ils sont couverts par des tests sur des appareils simulés, construits d'après des
+  formats publics. Signalez tout appareil qui se comporte mal, avec les logs de l'intégration.
 
 ## Dépannage
 
@@ -135,5 +144,5 @@ complément de leur intégration.
 - **Une commande échoue avec « 701 »** (transition impossible) : le lecteur refuse cette commande
   dans son état actuel, par exemple Lecture sans rien de chargé.
 - **Un fichier ou une radio ne se lit pas** : le lecteur doit accepter son format et joindre son
-  URL lui-même (une radio en `https` peut ne pas passer sur un vieux lecteur : essayez son adresse
-  `http`).
+  URL lui-même. Un lecteur en veille peut mettre une dizaine de secondes à démarrer : l'intégration
+  l'attend.

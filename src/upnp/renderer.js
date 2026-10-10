@@ -45,6 +45,16 @@ export function describeMedia(positionInfo = {}, mediaInfo = {}) {
   };
 }
 
+export class PlaybackNotStartedError extends Error {
+  constructor(seconds) {
+    super(
+      `The renderer did not start playing within ${seconds} s: still waking up, ` +
+        'format not supported, or URL not reachable from the renderer',
+    );
+    this.name = 'PlaybackNotStartedError';
+  }
+}
+
 export class Renderer {
   /**
    * @param {object} device parsed device of the description (see description.js)
@@ -60,6 +70,17 @@ export class Renderer {
     this.fetchImpl = fetchImpl;
     this.timeoutMs = timeoutMs;
     this.sink = null;
+    // How a renderer is followed after Play (see ensurePlaying).
+    // Measured on a Denon AVR-S650H from standby: empty state up to ~12 s,
+    // then STOPPED and every Play ignored until ~50 s, PLAYING at ~57 s.
+    this.playWait = {
+      timeoutMs: 75000,
+      intervalMs: 1000,
+      settleMs: 10000, // a playback that ends this soon was cut by the wake-up
+      replayGapMs: 5000, // Play is pressed again this often while STOPPED
+    };
+    this.now = () => Date.now();
+    this.sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
   }
 
   supports(service, action) {
@@ -140,11 +161,10 @@ export class Renderer {
     });
   }
 
-  /**
-   * Play a URL now. Many renderers refuse SetAVTransportURI while they play,
-   * so the current media is stopped first (a refused Stop is not an error).
-   */
-  async playUrl(url, { metadata, title, mime } = {}) {
+  /** Load a URL and press Play. Many renderers refuse SetAVTransportURI
+   * while they play, so the current media is stopped first (a refused Stop
+   * is not an error). */
+  async startUrl(url, metadata) {
     try {
       const { CurrentTransportState } = await this.av('GetTransportInfo');
       if (playbackOf(CurrentTransportState) !== PLAYBACK.STOPPED) {
@@ -153,8 +173,92 @@ export class Renderer {
     } catch {
       // Best effort: SetAVTransportURI below tells whether it worked.
     }
-    await this.setUri(url, metadata ?? buildMetadata({ url, title, mime }));
+    await this.setUri(url, metadata);
     await this.play();
+  }
+
+  /** The transport state and the loaded URI, or null while the renderer
+   * cannot answer (waking up). */
+  async readTransport() {
+    try {
+      const { CurrentTransportState } = await this.av('GetTransportInfo');
+      if (!CurrentTransportState) return null;
+      const media = await this.av('GetMediaInfo').catch(() => ({}));
+      return { state: CurrentTransportState, uri: media.CurrentURI ?? '' };
+    } catch {
+      return null;
+    }
+  }
+
+  /**
+   * Play a URL now and make sure it plays. Measured on a Denon AVR-S650H in
+   * standby: it accepts SetAVTransportURI and Play, answers nothing useful
+   * for about 12 s while it wakes up, then sits STOPPED with the URI loaded
+   * and ignores every Play (all answered 200) for another ~40 s before one
+   * finally starts it. A playback started during the source switch can also
+   * be cut a few seconds later.
+   * With `verify: false`, the call returns once Play is accepted (a device
+   * command must be acknowledged within 5 s): use `ensurePlaying` afterwards.
+   * Resolves the URL.
+   */
+  async playUrl(url, { metadata, title, mime, verify = true, cancelled } = {}) {
+    const loaded = metadata ?? buildMetadata({ url, title, mime });
+    await this.startUrl(url, loaded);
+    return verify ? this.ensurePlaying(url, { metadata: loaded, cancelled }) : url;
+  }
+
+  /**
+   * Follow the renderer after Play until the playback holds: wait while it
+   * does not answer (or is TRANSITIONING), press Play again every
+   * `replayGapMs` while it sits STOPPED without having played, load the URI again if it is
+   * no longer ours, and press Play once more if the playback stops within
+   * `settleMs` of its start. Throws a PlaybackNotStartedError when nothing
+   * plays within `timeoutMs`. `cancelled()` returning true stops the follow
+   * (another media or a command came in the meantime: never fight it).
+   */
+  async ensurePlaying(url, { metadata, title, mime, cancelled = () => false } = {}) {
+    const { timeoutMs, intervalMs, settleMs, replayGapMs } = this.playWait;
+    const loaded = metadata ?? buildMetadata({ url, title, mime });
+    const deadline = this.now() + timeoutMs;
+    let lastPress = this.now();
+    let restartedAfterDrop = false;
+    let playingSince = null;
+
+    const press = async (transport) => {
+      lastPress = this.now();
+      try {
+        if (transport.uri !== url) await this.setUri(url, loaded);
+        await this.play();
+      } catch {
+        // Still busy: the next round looks again.
+      }
+    };
+
+    for (;;) {
+      if (cancelled()) return url;
+      const transport = await this.readTransport();
+      if (cancelled()) return url;
+      const state = playbackOf(transport?.state);
+      if (state === PLAYBACK.PLAYING) {
+        playingSince ??= this.now();
+        if (this.now() - playingSince >= settleMs) return url;
+      } else if (state === PLAYBACK.STOPPED) {
+        if (playingSince !== null) {
+          // Started, then cut (the end of the source switch): once more.
+          if (restartedAfterDrop) throw new PlaybackNotStartedError(timeoutMs / 1000);
+          restartedAfterDrop = true;
+          playingSince = null;
+          await press(transport);
+        } else if (this.now() - lastPress >= replayGapMs) {
+          await press(transport);
+        }
+      }
+      if (this.now() >= deadline) {
+        if (playingSince !== null) return url;
+        throw new PlaybackNotStartedError(timeoutMs / 1000);
+      }
+      await this.sleep(intervalMs);
+    }
   }
 
   /** Volume as a percentage of the range the renderer declares. */

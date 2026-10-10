@@ -24,23 +24,32 @@ export function formatDuration(seconds) {
   return `${h}:${String(m).padStart(2, '0')}:${String(s).padStart(2, '0')}`;
 }
 
+/**
+ * A metadata text, or '' when it holds nothing but quotes and spaces: the
+ * Denon AVR-S650H describes an unknown artist or album as `""`.
+ */
+export function cleanText(value) {
+  const text = String(value ?? '').trim();
+  return /^["'\s]*$/.test(text) ? '' : text;
+}
+
 function parseObject(node) {
-  const artists = children(node, 'artist').map((artist) => artist.text.trim());
+  const artists = children(node, 'artist')
+    .map((artist) => ({ role: artist.attributes.role, name: cleanText(artist.text) }))
+    .filter((artist) => artist.name);
   return {
     kind: node.name, // 'item' | 'container'
     id: node.attributes.id ?? '',
     parentId: node.attributes.parentID ?? '',
-    title: childText(node, 'title'),
+    title: cleanText(childText(node, 'title')),
     upnpClass: childText(node, 'class'),
     // The performer first: some servers list the composer or the album
     // artist with a role, the performer without one.
     artist:
-      children(node, 'artist')
-        .find((artist) => !artist.attributes.role)
-        ?.text.trim() ||
-      artists[0] ||
-      childText(node, 'creator'),
-    album: childText(node, 'album'),
+      artists.find((artist) => !artist.role)?.name ||
+      artists[0]?.name ||
+      cleanText(childText(node, 'creator')),
+    album: cleanText(childText(node, 'album')),
     trackNumber: Number(childText(node, 'originalTrackNumber')) || null,
     albumArtUri: childText(node, 'albumArtURI'),
     resources: children(node, 'res')

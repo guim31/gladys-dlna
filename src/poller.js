@@ -154,6 +154,7 @@ export class RendererManager {
           timer: null,
           running: null,
           soon: false,
+          playToken: 0,
         });
         this.schedule(this.entries.get(externalId), 0);
       }
@@ -377,10 +378,13 @@ export class RendererManager {
   // --- Queue ------------------------------------------------------------------
 
   async startTrack(entry, renderer, track) {
+    entry.playToken += 1;
     entry.queue.preloaded = false;
     entry.queue.startedAt = this.now();
     entry.lastPlaying = null;
-    await renderer.playUrl(track.uri, { metadata: track.metadata });
+    // Server tracks are plain http, and a Next pressed in Gladys must be
+    // acknowledged within 5 s: no playback check here.
+    await renderer.playUrl(track.uri, { metadata: track.metadata, verify: false });
     await this.preloadNext(entry, renderer);
   }
 
@@ -471,6 +475,8 @@ export class RendererManager {
   async command(externalId, featureKey, value) {
     const entry = this.entryOf(externalId);
     const renderer = await this.rendererOf(entry);
+    // A command ends any follow-up of a playback start (see followStart).
+    entry.playToken += 1;
     switch (featureKey) {
       case RENDERER_FEATURES.PLAY:
         await renderer.play();
@@ -497,7 +503,8 @@ export class RendererManager {
         break;
       case RENDERER_FEATURES.NOTIFICATION:
         // The core's "play a notification" action sends the URL of a Gladys
-        // Plus text-to-speech MP3.
+        // Plus text-to-speech MP3. The command is acknowledged within 5 s: the
+        // playback check (and the http retry of an https URL) goes on after.
         await this.playUrl(externalId, String(value), { title: 'Gladys' });
         return;
       default:
@@ -542,11 +549,29 @@ export class RendererManager {
     const renderer = await this.rendererOf(entry);
     entry.queue = null;
     entry.lastPlaying = null;
+    entry.playToken += 1;
     if (Number.isFinite(volume) && renderer.hasVolume) {
       await renderer.setVolume(volume);
     }
-    await renderer.playUrl(url, { title });
     this.refreshSoon(entry);
+    // Answer once the renderer accepted Play: waking from standby can take
+    // more than a minute, longer than a command or a scene may wait.
+    await renderer.playUrl(url, { title, verify: false });
+    this.followStart(entry, renderer, url, { title });
+    return url;
+  }
+
+  /**
+   * Make sure a playback started without waiting for it (a renderer waking
+   * from standby can take more than a minute): Play pressed again while the
+   * wake-up ignores it, a clear log line if it never starts.
+   */
+  followStart(entry, renderer, url, options) {
+    const token = entry.playToken;
+    this.pending = renderer
+      .ensurePlaying(url, { ...options, cancelled: () => entry.playToken !== token })
+      .catch((err) => logger.info(`${entry.device.name}: ${err.message}`))
+      .finally(() => this.refreshSoon(entry));
   }
 
   /**
@@ -566,6 +591,9 @@ export class RendererManager {
     if (shuffled) shuffle(tracks, this.random);
     entry.queue = { tracks, index: 0, preloaded: false, noPreload: false, startedAt: this.now() };
     await this.startTrack(entry, renderer, tracks[0]);
+    // The search already used most of the scene's 90 s: the first track is
+    // followed in the background, the next ones need no check.
+    this.followStart(entry, renderer, tracks[0].uri, { metadata: tracks[0].metadata });
     this.refreshSoon(entry);
     return { track: tracks[0], count: tracks.length };
   }
