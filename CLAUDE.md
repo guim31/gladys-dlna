@@ -32,15 +32,19 @@ pushing.
 
 ```
 index.js                          SDK wiring only: handlers registered before connect()
-src/devices/index.js              registry of the device blueprints + dispatch helpers
-src/devices/<type>.js             one device type per file (buildDevice, onPoll, onSetValue...)
-src/scenes.js                     scene action handlers (manifest `scene_actions`)
-src/widgets.js                    dashboard widget handlers (manifest `widgets`)
+src/upnp/                         UPnP layer, no dependency: xml.js (reader), http.js (bounded fetch),
+                                  soap.js, description.js (SSDP, descriptions, SCPD), didl.js,
+                                  renderer.js (AVTransport, RenderingControl), server.js (ContentDirectory)
+src/registry.js                   description URL → known devices, capabilities, cached clients
+src/discovery.js                  mediated SSDP scan + manual URLs + created devices → Discovery tab
+src/devices/                      renderer.js / server.js discovery payloads, index.js ids and params
+src/poller.js                     renderer polling, commands, play queue, scene triggers
+src/states.js                     publish only the changed states
+src/actions.js, scenes.js, widgets.js  manifest actions, scene actions, the "player" widget
 src/config.js                     DEFAULT_CONFIG (mirrors the manifest defaults) + normalization
-src/weather.js                    example driver (Open-Meteo)
 gladys-assistant-integration.json manifest: name, config_schema, actions, image...
 docs/en.md, docs/fr.md            user documentation, re-hosted by Gladys (mandatory)
-test/                             node --test; test/helpers/fakeGladys.js stands in for the SDK
+test/                             node --test; helpers/fakeNetwork.js serves fixtures/devices/
 .github/scripts/release.mjs       release helpers (manifest bump, changelog), tested in test/
 ```
 
@@ -135,6 +139,25 @@ code de ce dépôt. Compléter ce fichier quand un nouveau piège est découvert
 - Une intégration `device` ne reçoit pas la langue de l'utilisateur, une action de scène non
   plus (un widget, si) : prévoir un champ de config `language` si des textes partent du
   conteneur. Le superviseur injecte `TZ`, le fuseau de Gladys. La sandbox est limitée à 256 Mo.
+
+**Appris sur l'intégration DLNA**
+
+- **Découverte SSDP médiée : le cœur ne scanne que la PREMIÈRE entrée `ssdp`** du manifeste
+  (`runScan.js`, « first-match »). Déclarer `MediaRenderer:1` puis `MediaServer:1` ne cherche
+  jamais les serveurs : une seule entrée `upnp:rootdevice`, puis lire chaque description (appareils
+  embarqués compris).
+- **Le conteneur principal n'a aucun port entrant** (spec `container-descriptor.md`) : un
+  abonnement UPnP GENA, ou tout rappel HTTP d'un appareil du LAN, est impossible. Interroger.
+- Le proxy du cœur pour les intégrations externes **ne transmet pas les `options` de `setValue`** :
+  le volume de l'action « Diffuser une notification » est perdu ; la valeur reçue est l'URL MP3
+  (chaîne) sur une fonctionnalité `music/play_notification`.
+- Les fonctionnalités `music/*` **ne s'affichent pas** dans la carte « appareils de la pièce » (seul
+  le widget Musique les lit) ; les touches `television/*` s'y affichent en boutons poussoirs.
+- Un bouton de widget `device_feature` sur une commande poussoir reste **teinté « actif » pour
+  toujours** (le cœur garde `last_value` = valeur envoyée) : passer par des actions de widget.
+- `publishStates` (lot) : un état texte part dans `text`, pas dans `state`.
+- Le SDK publié (0.14.0) n'a ni `publishChangedStates` ni `/testing`, que le README de `master`
+  documente déjà.
 
 **Formulaires de configuration et actions**
 
