@@ -1,0 +1,6 @@
+<s:Envelope xmlns:s="http://schemas.xmlsoap.org/soap/envelope/" s:encodingStyle="http://schemas.xmlsoap.org/soap/encoding/"><s:Body>
+<u:GetTransportSettingsResponse xmlns:u="urn:schemas-upnp-org:service:AVTransport:1">
+<PlayMode></PlayMode>
+<RecQualityMode></RecQualityMode>
+</u:GetTransportSettingsResponse>
+</s:Body> </s:Envelope>

@@ -1,0 +1,6 @@
+<s:Envelope xmlns:s="http://schemas.xmlsoap.org/soap/envelope/" s:encodingStyle="http://schemas.xmlsoap.org/soap/encoding/"><s:Body>
+<u:GetProtocolInfoResponse xmlns:u="urn:schemas-upnp-org:service:ConnectionManager:1">
+<Source></Source>
+<Sink>http-get:*:audio/mpeg:*,http-get:*:audio/vnd.dlna.adts:*,http-get:*:audio/x-ms-wma:*,http-get:*:audio/x-ms-wma:*,http-get:*:audio/L16;rate=48000;channels=2:*,http-get:*:audio/L16;rate=48000;channels=1:*,http-get:*:audio/L16;rate=44100;channels=2:*,http-get:*:audio/L16;rate=44100;channels=1:*,http-get:*:audio/wav:*,http-get:*:audio/mp3:*,http-get:*:audio/flac:*,http-get:*:audio/aac:*,http-get:*:audio/m4a:*,http-get:*:audio/dsd:*,http-get:*:audio/dsf:*,http-get:*:audio/dff:*,http-get:*:audio/x-dsd:*,http-get:*:audio/x-dsf:*,http-get:*:audio/x-dff:*</Sink>
+</u:GetProtocolInfoResponse>
+</s:Body> </s:Envelope>
