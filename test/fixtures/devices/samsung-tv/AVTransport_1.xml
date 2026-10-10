@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<scpd xmlns="urn:schemas-upnp-org:service-1-0">
+<specVersion><major>1</major><minor>0</minor></specVersion>
+<actionList><action><name>GetCurrentTransportActions</name></action><action><name>GetDeviceCapabilities</name></action><action><name>GetMediaInfo</name></action><action><name>GetPositionInfo</name></action><action><name>GetTransportInfo</name></action><action><name>GetTransportSettings</name></action><action><name>Next</name></action><action><name>Pause</name></action><action><name>Play</name></action><action><name>Previous</name></action><action><name>Seek</name></action><action><name>SetAVTransportURI</name></action><action><name>Stop</name></action><action><name>X_DLNA_GetBytePositionInfo</name></action></actionList>
+<serviceStateTable></serviceStateTable>
+</scpd>

@@ -1,0 +1,15 @@
+{
+  "location": "http://192.0.2.20:1234/device.xml",
+  "origin": "async-upnp-client test fixture (Apache-2.0)",
+  "files": {
+    "/device.xml": "device.xml",
+    "/AVTransport_1.xml": "AVTransport_1.xml",
+    "/RenderingControl_1.xml": "RenderingControl_1.xml",
+    "/ConnectionManager_1.xml": "ConnectionManager_1.xml"
+  },
+  "soap": {
+    "/upnp/control/AVTransport1#GetPositionInfo": "action_GetPositionInfo.xml",
+    "/upnp/control/AVTransport1#GetMediaInfo": "action_GetMediaInfo.xml",
+    "/upnp/control/RenderingControl1#GetVolume": "action_GetVolume.xml"
+  }
+}

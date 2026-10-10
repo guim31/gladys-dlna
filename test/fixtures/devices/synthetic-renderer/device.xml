@@ -1,0 +1,27 @@
+<?xml version="1.0"?>
+<root xmlns="urn:schemas-upnp-org:device-1-0">
+  <specVersion><major>1</major><minor>0</minor></specVersion>
+  <device>
+    <deviceType>urn:schemas-upnp-org:device:MediaRenderer:2</deviceType>
+    <friendlyName>Hall speaker</friendlyName>
+    <manufacturer>Example</manufacturer>
+    <modelName>Speaker S1</modelName>
+    <UDN>uuid:00000000-0000-4000-8000-0000000000c1</UDN>
+    <serviceList>
+      <service>
+        <serviceType>urn:schemas-upnp-org:service:AVTransport:2</serviceType>
+        <serviceId>urn:upnp-org:serviceId:AVTransport</serviceId>
+        <controlURL>/av/control</controlURL>
+        <eventSubURL>/av/event</eventSubURL>
+        <SCPDURL>/av/scpd.xml</SCPDURL>
+      </service>
+      <service>
+        <serviceType>urn:schemas-upnp-org:service:RenderingControl:2</serviceType>
+        <serviceId>urn:upnp-org:serviceId:RenderingControl</serviceId>
+        <controlURL>/rc/control</controlURL>
+        <eventSubURL>/rc/event</eventSubURL>
+        <SCPDURL>/rc/scpd.xml</SCPDURL>
+      </service>
+    </serviceList>
+  </device>
+</root>

@@ -12,28 +12,20 @@ the notes of the version's GitHub Release.
 
 ### Added
 
-- A working example of scene triggers, scene actions and dashboard widgets
-  (Gladys 5.1.0 or later).
-- `CHANGELOG.md`, rolled by the Release workflow.
-- A GitHub Release for every version, with its changelog section as notes: the
-  Gladys Supervision page links each version to the repository's releases.
-- CI runs the tests on Node 22 and 24, and builds the Docker image.
-- Dependabot keeps the npm dependencies and the GitHub Actions up to date.
-- `SECURITY.md` (how to report a vulnerability) and `CLAUDE.md` (project rules
-  for contributors and coding assistants).
-- Manifest tests: `version` matches `package.json`, `docker_image` is tagged
-  with it, descriptions hold 10 to 100 characters, placeholders are
-  multi-language objects.
-- The latitude and longitude fields show an example value as placeholder.
+- DLNA / UPnP AV renderers (TV, amplifier, speaker): play, pause, stop, previous, next, volume,
+  mute, playback state and the title being played, compatible with the core Music widget and the
+  core "Play a notification" scene action.
+- Media servers (Plex, Jellyfin, Emby, MiniDLNA…), browsed and searched through `ContentDirectory`.
+- Automatic discovery through the network search of Gladys (SSDP), embedded devices included, and
+  description URLs typed by hand for the other networks.
+- Scene actions "Play a media server on a DLNA renderer" (title, artist, album or folder; in order,
+  shuffled or first result) and "Play a URL on a DLNA renderer".
+- Scene triggers "DLNA playback started", "paused" and "stopped", filterable by renderer.
+- "DLNA player" dashboard widget.
+- Configuration actions "Test a description URL" and "Browse a media server".
 
-### Changed
+### Removed
 
-- Node.js 22 or later is required (Node 20 is end-of-life).
+- The demo devices, actions, scenes and widget of the template.
 
-### Fixed
-
-- The release commit no longer fails `npm run format:check`: the Release
-  workflow updates the manifest `version` and `docker_image` in place instead
-  of re-printing the whole file with `jq`.
-
-[Unreleased]: https://github.com/GladysAssistant/integration-template-js/commits/main
+[Unreleased]: https://github.com/guim31/gladys-dlna/commits/main

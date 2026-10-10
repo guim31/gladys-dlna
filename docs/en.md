@@ -1,59 +1,134 @@
-# Demo Devices Template
+# DLNA
 
-This is the user documentation of the integration. Gladys re-hosts this file
-and shows a permanent **Documentation** link to it in the Configuration screen
-(in the user's language, with English as the fallback) — it is when
-configuring that the user needs it most. Keep the short onboarding hints in
-the `section` blocks of the manifest `config_schema`; put the long
-step-by-step (screenshots, troubleshooting…) here.
+Control the DLNA / UPnP renderers of your home (TV, amplifier, speaker, streamer) and play the
+content of your media servers (Plex, Jellyfin, Emby, MiniDLNA, a NAS…) from Gladys. Everything stays
+on your local network: no account, no cloud.
 
-## What you get
+## Requirements
 
-Six demo devices show up after installation: a weather station (real data
-from Open-Meteo), a switch, a dimmable light, a smart plug with power
-metering, a motion sensor and a camera.
+- Gladys 5.1.0 or later.
+- The renderers and servers on the same network as Gladys. A device on another network (VLAN, other
+  subnet) can be added by hand, see below.
+- On a renderer, DLNA must be enabled: it is sometimes called "DLNA", "UPnP", "Media renderer",
+  "Play to" or "AllShare" in its settings, and some TVs only answer when they are on (not in
+  standby).
 
-## Configuration
+## Adding your devices
 
-1. Open the **Configuration** tab of the integration.
-2. Set the **latitude** and **longitude** the demo weather station should
-   observe (they default to Paris), and pick your temperature unit.
-3. Save: the devices appear in the **Discovery** tab, ready to be added.
+1. Install the integration, then open its **Discovery** tab: Gladys searches the network and lists
+   the renderers and the media servers it found. Run the search again with the button if a device is
+   missing (a TV must be on).
+2. Add the devices you want. A **renderer** gets the playback commands; a **media server** gets no
+   feature, but it then appears in the scene actions.
+3. Some devices are both: a Denon amplifier, for instance, is a renderer and a small media server.
+   The server is then listed with "(media server)" after its name.
 
-The **Prefer the local connection** toggle drives the demo plug: it reports
-the channel it actually uses as a badge (local or cloud), with an orange dot
-when it runs degraded (local refused, cloud fallback).
+**Language of the feature names**: Gladys keeps the names of a device once it is added. Pick the
+language in **Configuration** before adding the devices.
 
-## Actions
+**A device that is not found**: SSDP discovery only works on the network of Gladys. Find the URL
+of the UPnP description of the device (in the documentation of the device or the server: MiniDLNA serves
+`http://<address>:8200/rootDesc.xml`, a Denon/HEOS amplifier
+`http://<address>:60006/upnp/desc/aios_device/aios_device.xml`). Check it with the **Test a
+description URL** action, then add it to **Description URLs** in the configuration and run the
+search again.
 
-- **Test the weather provider** — performs a live request to Open-Meteo and
-  shows the current temperature and humidity under the button.
-- **Identify a device** — pick one of your devices in the list and it will
-  signal itself (the demo light "blinks" in the logs).
+## The renderer device
+
+| Feature        | What it does                                                     |
+| -------------- | ---------------------------------------------------------------- |
+| Play, Pause    | Starts or resumes, pauses (stops when the renderer cannot pause) |
+| Stop           | Stops the playback                                               |
+| Previous, Next | Previous or next track (of the queue, see below)                 |
+| Volume         | 0 to 100 %, mapped to the range the renderer declares            |
+| Mute           | Toggles mute                                                     |
+| Playback state | 1 while playing, 0 otherwise (paused, stopped, off)              |
+| Now playing    | "Artist — Title" as the renderer describes it, "—" when nothing  |
+| Notification   | Used by the core "Play a notification" scene action              |
+
+Volume and Mute only appear when the renderer has them. The device works with the core **Music**
+widget of the dashboard (previous, play/pause, next, volume).
+
+The state is refreshed every few seconds while playing, every 15 seconds otherwise. A renderer
+that is off shows the **unreachable** badge and is checked once a minute; when it comes back on
+another address, the integration finds it again by itself (a network search, at most every 5
+minutes).
 
 ## Scenes
 
-The integration adds its own cards to the scene editor (Gladys 5.1 or
-later), under the **Integrations** category:
+**Triggers**
 
-- **Motion detected** (trigger) — starts the scene when a demo motion sensor
-  sees something move. Optionally pick the sensor and what moved (person,
-  animal); left empty, any detection matches. The following actions can
-  read what moved with `{{triggerEvent.data.target}}`.
-- **Identify a device** (action) — makes the chosen device signal itself.
-  It returns whether the device could signal itself, so the following
-  actions can depend on it.
+- **DLNA playback started**, **DLNA playback paused**, **DLNA playback stopped**: pick a renderer,
+  or leave it empty for any. The following actions can use `{{triggerEvent.data.renderer}}`,
+  `{{triggerEvent.data.title}}`, `{{triggerEvent.data.artist}}` and `{{triggerEvent.data.album}}`.
+  Typical use: dim the lights when the TV starts playing a film, turn them back on when it stops.
+  A renderer that is switched off fires nothing (it is not a "stop"), and neither does the short
+  gap between two tracks of a queue.
+
+**Actions**
+
+- **Play a media server on a DLNA renderer**: pick the renderer and the server, then what to
+  search:
+  - _Anything_: titles, artists and albums containing the text, then a folder of that name;
+  - _Title_, _Artist_, _Album_ (an album plays in track order);
+  - _Folder_: a folder name (`Jazz`), or a path from the root of the server (`Music/Jazz`). The
+    tracks of its sub-folders are included. Use the **Browse a media server** action of the
+    configuration to find the paths.
+
+  Then choose to play everything in order, everything shuffled, or the first result only, and
+  optionally a volume. A search that takes more than 75 seconds (a huge library on a server that cannot search) stops with an error: give a narrower one, such as a folder path. The action returns whether something was found, the number of tracks queued
+  and the first title, for the following actions.
+
+- **Play a URL on a DLNA renderer**: a web radio, a sound or an announcement file, by its http(s)
+  URL, with an optional title and volume. The URL must be reachable by the renderer itself.
+
+**Queue**: a DLNA renderer plays one media at a time. For an album or a folder, the integration
+keeps the list and hands the tracks over one after the other (without a gap when the renderer
+supports it). Next and Previous walk the list. The queue stops when something else is played on
+the renderer, and it only advances while Gladys and the integration run.
+
+**Announcements**: the core **Play a notification** action works on the renderers (it needs Gladys
+Plus for the text-to-speech). It plays at the current volume (the core does not pass its volume to
+the integrations), and the previous media is not resumed afterwards. To set the volume of an
+announcement, place a device control action on its Volume feature before it.
 
 ## Dashboard
 
-Add the **Demo status** widget to a dashboard: it shows the live
-temperature of the weather station and the power of the office plug, the
-connection the plug currently uses (orange when degraded) and the observed
-location. Its **Identify the light** button makes the demo light signal
-itself.
+Add the **DLNA player** widget and pick a renderer in its settings: it shows the title, the album,
+the state, the queue position, mute, a live volume gauge, and four buttons (play/pause, stop,
+volume − and +, by steps of 5 %).
+
+## Configuration actions
+
+- **Test a description URL**: reads a description URL and tells what it holds.
+- **Browse a media server**: lists the folders and tracks of a server, from the root or from a
+  path (`Music/Albums`).
+
+## Sonos, Samsung, LG
+
+Sonos speakers, Samsung TVs and LG webOS TVs have their own Gladys integrations, which do more than
+DLNA (groups, sources, applications). This integration still sees them when they offer DLNA: it is
+useful to play media from a server or announcements, next to their own integration.
+
+## What has been checked on real hardware
+
+- **Checked against a real Denon AVR-S650H** (answers captured on the amplifier, stopped): its
+  description (renderer and media server embedded in a Denon root device, port 60006), its four
+  service descriptions, and its answers to the state requests (transport, position, media, volume,
+  mute, supported formats). The tests replay them: the amplifier is discovered with all its
+  features, volume and mute are read correctly.
+- **Not checked on real hardware yet**: the commands (play, pause, stop, volume, mute), playing a
+  URL or a server track on the Denon, the queue and its gapless transitions, the network search run
+  by Gladys, and searching a real media server (MiniDLNA, Plex, Jellyfin). They are covered by tests
+  on simulated devices built from public formats. Please report any device that misbehaves, with
+  the logs of the integration.
 
 ## Troubleshooting
 
-The integration logs everything it does: check the integration logs from the
-Gladys UI (or `docker logs` on the host) with `LOG_LEVEL=debug` for the full
-detail.
+- **Nothing in the Discovery tab**: check that the devices are on and on the same network as
+  Gladys; read the logs of the integration (`Discovery: N SSDP answer(s)…`). Add a description URL
+  by hand otherwise.
+- **A command fails with "701"** (transition not available): the renderer refuses this command in
+  its current state, for instance Play with nothing loaded.
+- **A file or a radio does not play**: the renderer must support its format, and reach its URL
+  itself (an `https` radio may not play on an old renderer: try its `http` address).

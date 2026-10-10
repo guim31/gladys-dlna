@@ -1,0 +1,11 @@
+{
+  "location": "http://192.0.2.40:9197/dmr",
+  "origin": "reconstructed from the public format of Samsung Tizen TVs, not a capture",
+  "files": {
+    "/dmr": "device.xml",
+    "/AVTransport_1.xml": "AVTransport_1.xml",
+    "/RenderingControl_1.xml": "RenderingControl_1.xml",
+    "/ConnectionManager_1.xml": "../aup-dmr/ConnectionManager_1.xml"
+  },
+  "soap": {}
+}

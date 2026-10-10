@@ -1,0 +1,19 @@
+{
+  "location": "http://192.0.2.10:60006/upnp/desc/aios_device/aios_device.xml",
+  "origin": "real capture (Denon AVR-S650H, firmware 3.139.173), anonymized",
+  "files": {
+    "/upnp/desc/aios_device/aios_device.xml": "device.xml",
+    "/upnp/scpd/renderer_dvc/AVTransport.xml": "scpd-AVTransport.xml",
+    "/upnp/scpd/renderer_dvc/RenderingControl.xml": "scpd-RenderingControl.xml",
+    "/upnp/scpd/renderer_dvc/ConnectionManager.xml": "scpd-ConnectionManager.xml"
+  },
+  "soap": {
+    "/upnp/control/renderer_dvc/AVTransport#GetTransportInfo": "soap-GetTransportInfo.xml",
+    "/upnp/control/renderer_dvc/AVTransport#GetPositionInfo": "soap-GetPositionInfo.xml",
+    "/upnp/control/renderer_dvc/AVTransport#GetMediaInfo": "soap-GetMediaInfo.xml",
+    "/upnp/control/renderer_dvc/AVTransport#GetTransportSettings": "soap-GetTransportSettings.xml",
+    "/upnp/control/renderer_dvc/RenderingControl#GetVolume": "soap-GetVolume.xml",
+    "/upnp/control/renderer_dvc/RenderingControl#GetMute": "soap-GetMute.xml",
+    "/upnp/control/renderer_dvc/ConnectionManager#GetProtocolInfo": "soap-GetProtocolInfo.xml"
+  }
+}

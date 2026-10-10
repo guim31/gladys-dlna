@@ -1,169 +1,142 @@
 // -----------------------------------------------------------------------------
-// Entry point of the Gladys external integration.
+// Entry point of the DLNA integration: SDK wiring only. Handlers are
+// registered before connect(); the UPnP work lives in src/.
 //
-// Role of this file: wire the SDK to the device catalog (src/devices/). It holds
-// NO hardware logic: all the control "work" lives in the device modules. This
-// file only:
-//   1. instantiates the SDK (connection, auth, reconnection: handled for you);
-//   2. registers the event handlers BEFORE connect();
-//   3. connects and publishes the discovered devices.
-//
-// Environment variables provided by the Gladys supervisor to the container:
-//   - GLADYS_HOST_API_URL         (host API URL)
-//   - GLADYS_INTEGRATION_TOKEN    (integration-scoped JWT)
-//   - GLADYS_INTEGRATION_SELECTOR (integration identifier)
-// The SDK reads them automatically: `new GladysIntegration()` is enough.
+// Environment variables provided by the Gladys supervisor (read by the SDK):
+// GLADYS_HOST_API_URL, GLADYS_INTEGRATION_TOKEN, GLADYS_INTEGRATION_SELECTOR.
 // -----------------------------------------------------------------------------
 
 import { GladysIntegration, logger } from '@gladysassistant/integration-sdk';
 import { normalizeConfig } from './src/config.js';
-import {
-  DEVICE_BLUEPRINTS,
-  buildDiscoveredDevices,
-  buildTransportEntries,
-  findBlueprintByDevice,
-  identifyDevice,
-} from './src/devices/index.js';
-import { SCENE_ACTIONS } from './src/scenes.js';
-import { WIDGETS, refreshWidgets } from './src/widgets.js';
+import { DEVICE_KINDS, parseDeviceExternalId } from './src/devices/index.js';
+import { rendererFeatureKey } from './src/devices/renderer.js';
+import { Registry } from './src/registry.js';
+import { StatePublisher } from './src/states.js';
+import { RendererManager } from './src/poller.js';
+import { buildDiscoveredDevices, discover } from './src/discovery.js';
+import { createActions } from './src/actions.js';
+import { createSceneActions } from './src/scenes.js';
+import { createWidgets, refreshWidgets } from './src/widgets.js';
+
+// A renderer that went silent may have moved (DHCP, a new port after a
+// reboot): a background scan relocates it, at most this often.
+const RELOCATION_INTERVAL_MS = 5 * 60 * 1000;
 
 const gladys = new GladysIntegration();
-
-// Current configuration (hot-reloaded via onConfigUpdated).
 let config = normalizeConfig();
 
-// Cleanup functions for the "push" subscriptions (e.g. the motion sensor).
-let pushCleanups = [];
+const registry = new Registry();
+const publisher = new StatePublisher(gladys);
+let widgets = {};
+const renderers = new RendererManager({
+  gladys,
+  registry,
+  publisher,
+  onDisplayChange: () => refreshWidgets(gladys, widgets),
+  onUnreachable: () => relocate(),
+});
+const context = { gladys, registry, renderers };
+widgets = createWidgets(context);
 
-// --- Discovery: Gladys asks for the list of devices --------------------------
+// --- Discovery -----------------------------------------------------------------
+// One discovery at a time: the core runs one network scan per integration.
+let discovery = null;
+function runDiscovery() {
+  if (!discovery) {
+    discovery = (async () => {
+      const infos = await discover({ gladys, registry, config });
+      await gladys.publishDiscoveredDevices(buildDiscoveredDevices(gladys, infos, config));
+    })().finally(() => {
+      discovery = null;
+    });
+  }
+  return discovery;
+}
+
+let lastRelocation = 0;
+function relocate() {
+  if (Date.now() - lastRelocation < RELOCATION_INTERVAL_MS) return;
+  lastRelocation = Date.now();
+  runDiscovery().catch((err) => logger.warn('Background discovery failed', err));
+}
+
 gladys.onScanRequest(async () => {
-  logger.info('onScanRequest -> publishing discovered devices');
-  await gladys.publishDiscoveredDevices(buildDiscoveredDevices(gladys, config));
+  logger.info('onScanRequest -> searching DLNA devices');
+  await runDiscovery();
 });
 
-// --- Command: the user acts on a controllable feature ------------------------
+// --- Commands --------------------------------------------------------------------
 gladys.onSetValue(async (device, feature, value) => {
-  logger.info(`onSetValue <- ${feature.external_id} = ${value}`);
-  const blueprint = findBlueprintByDevice(gladys, device);
-  if (!blueprint || typeof blueprint.onSetValue !== 'function') {
-    // Throw: the SDK sends a success:false acknowledgement to Gladys.
-    throw new Error(`No command handler for ${device.external_id}`);
+  logger.info(`onSetValue <- ${feature.external_id}`);
+  if (parseDeviceExternalId(gladys, device.external_id)?.kind !== DEVICE_KINDS.RENDERER) {
+    throw new Error(`No command on ${device.external_id}`);
   }
-  await blueprint.onSetValue(gladys, { device, feature, value, config });
+  await renderers.command(
+    device.external_id,
+    rendererFeatureKey(device.external_id, feature.external_id),
+    value,
+  );
 });
 
-// --- Camera: Gladys needs a FRESH image of a camera device -------------------
-// Triggered by the dashboard live view or a chat intent. The resolved
-// `image/jpg;base64,...` string (≤ 150 KB) is acked back to Gladys; the ack is
-// awaited under 15 s (not the usual 5 s), so a real capture fits.
-gladys.onGetImage(async (device) => {
-  logger.info(`onGetImage <- ${device.external_id}`);
-  const blueprint = findBlueprintByDevice(gladys, device);
-  if (!blueprint || typeof blueprint.onGetImage !== 'function') {
-    throw new Error(`No camera handler for ${device.external_id}`);
-  }
-  return blueprint.onGetImage(gladys, { device, config });
-});
-
-// --- Polling: Gladys asks to refresh a device --------------------------------
+// The devices are published with should_poll: false (the container polls at
+// its own pace); a poll asked by the core anyway just refreshes now.
 gladys.onPoll(async (device) => {
-  const blueprint = findBlueprintByDevice(gladys, device);
-  if (!blueprint || typeof blueprint.onPoll !== 'function') {
-    logger.debug(`onPoll ignored (no polling) for ${device.external_id}`);
-    return;
-  }
-  await blueprint.onPoll(gladys, config);
+  await renderers.refresh(device.external_id);
 });
 
-// --- Manifest actions: buttons in the Configuration screen -------------------
-// Each action declared in the `actions` field of the manifest is registered
-// per key; the message resolved by the handler is displayed under the button
-// (the ack is awaited under the action's `timeout_seconds`, not the usual 5 s).
-for (const blueprint of DEVICE_BLUEPRINTS) {
-  for (const [actionKey, handler] of Object.entries(blueprint.actions ?? {})) {
-    gladys.onAction(actionKey, (fields) => handler(gladys, { fields, config }));
+// --- Device lifecycle ------------------------------------------------------------
+// The core drops the states received before a feature exists: everything is
+// published again once the user added the device.
+gladys.onDeviceCreated(async (device) => {
+  renderers.sync(gladys.devices);
+  if (parseDeviceExternalId(gladys, device.external_id)?.kind === DEVICE_KINDS.RENDERER) {
+    await renderers.republish(device.external_id);
   }
-}
-
-// The `identify` action targets ONE device chosen by the user, so it is not
-// owned by a single blueprint. Its manifest field declares
-// `"source": "devices"` (SDK v0.7+): instead of static `options`, the
-// Configuration screen fills the select with the integration's own created
-// devices, and the handler receives the chosen external_id as a field value.
-gladys.onAction('identify', (fields) => {
-  logger.info(`Action identify <- ${fields.device}`);
-  return identifyDevice(gladys, fields.device, config);
+  refreshWidgets(gladys, widgets);
 });
 
-// --- Scene actions: operations a scene author placed in a scene -------------
-// Each action declared in the `scene_actions` field of the manifest is
-// registered per key (SDK v0.14+, Gladys 5.1+). The handler receives the
-// RESOLVED fields and returns the declared outputs (see src/scenes.js). Scene
-// TRIGGERS need no handler: the devices fire them with publishSceneEvent (see
-// src/devices/motionSensor.js).
-for (const [actionKey, handler] of Object.entries(SCENE_ACTIONS)) {
-  gladys.onSceneAction(actionKey, (fields) => handler(gladys, { fields, config }));
+gladys.onDeviceUpdated(async () => {
+  renderers.sync(gladys.devices);
+});
+
+gladys.onDeviceDeleted(async (device) => {
+  renderers.sync(gladys.devices);
+  publisher.forget(device.external_id);
+});
+
+// --- Manifest actions, scene actions, widgets ------------------------------------
+for (const [key, handler] of Object.entries(createActions(context))) {
+  gladys.onAction(key, (fields) => handler(fields));
 }
 
-// --- Dashboard widgets -------------------------------------------------------
-// Each widget declared in the `widgets` field of the manifest is registered
-// per key (SDK v0.14+, Gladys 5.1+): Gladys pulls its content (ack awaited
-// under 15 s) and relays the taps on its `button` actions (see src/widgets.js).
-for (const [widgetKey, widget] of Object.entries(WIDGETS)) {
-  gladys.onWidgetGet(widgetKey, (request) => widget.get(gladys, { ...request, config }));
-  if (typeof widget.action === 'function') {
-    gladys.onWidgetAction(widgetKey, (actionKey, params, { settings }) =>
-      widget.action(gladys, { actionKey, params, settings, config }),
-    );
-  }
+for (const [key, handler] of Object.entries(createSceneActions(context))) {
+  gladys.onSceneAction(key, (fields) => handler(fields));
 }
 
-// --- Configuration updated by the user ---------------------------------------
+for (const [key, widget] of Object.entries(widgets)) {
+  gladys.onWidgetGet(key, (request) => widget.get(request));
+  gladys.onWidgetAction(key, (actionKey, params, { settings }) =>
+    widget.action({ actionKey, params, settings }),
+  );
+}
+
+// --- Configuration -----------------------------------------------------------------
 gladys.onConfigUpdated(async (newConfig) => {
   logger.info('onConfigUpdated -> new configuration received');
   config = normalizeConfig(newConfig);
-  // Re-publish the devices: some properties (unit, frequency) depend on it.
-  // publishDiscoveredDevices is idempotent (upsert by external_id).
-  await gladys.publishDiscoveredDevices(buildDiscoveredDevices(gladys, config));
-  // The reserved GLADYS_PREFER_LOCAL key arrives here like any other key:
-  // re-route the dual-channel devices, then reflect the ACTUAL outcome.
-  await publishDeviceTransports();
-  // The dashboard widget shows config-derived values (plug connection,
-  // observed location): nudge it instead of waiting for its content TTL.
-  refreshWidgets(gladys);
+  await runDiscovery();
 });
 
-// --- Connection lifecycle ----------------------------------------------------
-// The SDK itself logs the WebSocket lifecycle (connections, disconnections,
-// reconnection attempts) under the `gladys-sdk` name: no need to log it again
-// here, these handlers only run the integration's own (re)initialization.
+// --- Connection lifecycle ----------------------------------------------------------
 gladys.on('connected', async () => {
   try {
-    // 1) Fetch the config filled in by the user.
     config = normalizeConfig(await gladys.getConfig());
-
-    // 2) (Re)publish all devices as soon as we are connected.
-    await gladys.publishDiscoveredDevices(buildDiscoveredDevices(gladys, config));
-
-    // 3) Publish the per-device transport badge (cloud/local, dual-channel
-    // devices only). Lightweight channel: on a live switch, call it again
-    // without re-publishing the devices.
-    await publishDeviceTransports();
-    // The widget's computed rows (plug connection, observed location) follow
-    // the config and the transports just re-published, and the nudges sent
-    // while the socket was down were dropped: re-sync open dashboards too.
-    refreshWidgets(gladys);
-
-    // 4) Start the real-time subscriptions ("push" sensors, camera snapshots).
-    stopPushSubscriptions();
-    pushCleanups = DEVICE_BLUEPRINTS.filter((bp) => typeof bp.startPush === 'function').map((bp) =>
-      bp.startPush(gladys, config),
-    );
-
-    // 5) Report the application-level status, shown in the Configuration
-    // screen. Distinct from the container state machine: an integration can
-    // be RUNNING and still disconnected from its third-party service.
+    renderers.sync(gladys.devices);
     await gladys.setConnectionStatus(true);
+    // Nudges sent while the socket was down were dropped.
+    refreshWidgets(gladys, widgets);
+    // Fill the Discovery tab without waiting for the user to ask.
+    runDiscovery().catch((err) => logger.warn('Startup discovery failed', err));
   } catch (err) {
     logger.error('Post-connection initialization failed', err);
     await gladys
@@ -176,42 +149,15 @@ gladys.on('connected', async () => {
 });
 
 gladys.on('disconnected', () => {
-  stopPushSubscriptions();
+  renderers.stopAll();
 });
 
-// Publish the effective transport of every dual-channel device
-// ('local' | 'cloud' | 'unreachable'), rendered as a badge in the Gladys UI.
-// An entry can also flag a degraded state (`{ degraded: true, message }`,
-// SDK v0.7+): the badge keeps its transport color plus an orange dot, and the
-// tooltip shows the reason — see src/devices/plug.js.
-async function publishDeviceTransports() {
-  const entries = buildTransportEntries(gladys, config);
-  if (entries.length > 0) {
-    await gladys.publishTransports(entries);
-  }
-}
-
-function stopPushSubscriptions() {
-  for (const cleanup of pushCleanups) {
-    try {
-      cleanup?.();
-    } catch (err) {
-      logger.error('Push subscription cleanup failed', err);
-    }
-  }
-  pushCleanups = [];
-}
-
-// --- Graceful shutdown -------------------------------------------------------
-// The SDK stops the push subscriptions, disconnects cleanly and exits with
-// code 0 when the supervisor stops the container (SIGTERM/SIGINT).
 gladys.handleShutdown((signal) => {
   logger.info(`Received ${signal} -> graceful shutdown`);
-  stopPushSubscriptions();
+  renderers.stopAll();
 });
 
-// --- Startup -----------------------------------------------------------------
-logger.info('Starting the template integration...');
+logger.info('Starting the DLNA integration...');
 gladys.connect().catch((err) => {
   logger.error('Initial connection failed', err);
   process.exit(1);
