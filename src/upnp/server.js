@@ -59,24 +59,63 @@ function albumOrder(a, b) {
 
 const playable = (item) => item.resources.length > 0;
 
+/** A lookup that ran out of its time budget (see MediaServer.withDeadline). */
+export class SearchTimeoutError extends Error {
+  constructor(seconds) {
+    super(
+      `The media server did not answer the search within ${seconds} s: ` +
+        'search something narrower (an album, a folder path)',
+    );
+    this.name = 'SearchTimeoutError';
+  }
+}
+
 export class MediaServer {
-  constructor(device, { fetchImpl, timeoutMs = 10000 } = {}) {
+  constructor(device, { fetchImpl, timeoutMs = 10000, now = () => Date.now() } = {}) {
     this.device = device;
     this.contentDirectory = findService(device, SERVICE_TYPES.CONTENT_DIRECTORY);
     this.fetchImpl = fetchImpl;
     this.timeoutMs = timeoutMs;
+    this.now = now;
+    this.shared = this; // what the scoped copies write back (capabilities cache)
     this.searchCapabilities = undefined;
   }
 
-  call(action, args) {
-    return soapCall({
-      controlUrl: this.contentDirectory.controlUrl,
-      serviceType: this.contentDirectory.serviceType,
-      action,
-      args,
-      timeoutMs: this.timeoutMs,
-      fetchImpl: this.fetchImpl,
-    });
+  /**
+   * A view of this server whose requests all share one deadline: a crawl of a
+   * big library stops cleanly before the scene action it serves times out,
+   * instead of browsing on after the core gave up.
+   */
+  withDeadline(budgetMs) {
+    const scoped = Object.create(this);
+    scoped.deadline = this.now() + budgetMs;
+    scoped.budgetSeconds = Math.round(budgetMs / 1000);
+    return scoped;
+  }
+
+  async call(action, args) {
+    let timeoutMs = this.timeoutMs;
+    if (this.deadline !== undefined) {
+      const remaining = this.deadline - this.now();
+      if (remaining <= 0) throw new SearchTimeoutError(this.budgetSeconds);
+      timeoutMs = Math.min(timeoutMs, remaining);
+    }
+    try {
+      return await soapCall({
+        controlUrl: this.contentDirectory.controlUrl,
+        serviceType: this.contentDirectory.serviceType,
+        action,
+        args,
+        timeoutMs,
+        fetchImpl: this.fetchImpl,
+      });
+    } catch (err) {
+      // A request cut by the deadline says so, not "operation aborted".
+      if (this.deadline !== undefined && this.now() >= this.deadline) {
+        throw new SearchTimeoutError(this.budgetSeconds);
+      }
+      throw err;
+    }
   }
 
   /** One page of Browse: `{ items, containers, total, returned }`. */
@@ -269,8 +308,9 @@ export class MediaServer {
         );
         const found = pick(containers);
         if (found) return found;
-      } catch {
+      } catch (err) {
         // A server may declare Search and still fail on a criteria: crawl.
+        if (err instanceof SearchTimeoutError) throw err;
       }
     }
 
@@ -308,7 +348,8 @@ export class MediaServer {
       try {
         const result = await this.search('0', criteria, { max: limit * 2 });
         items = result.items;
-      } catch {
+      } catch (err) {
+        if (err instanceof SearchTimeoutError) throw err;
         items = null; // declared but broken Search: crawl below
       }
     }

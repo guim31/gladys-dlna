@@ -19,6 +19,10 @@ const logger = createLogger({ name: 'scenes' });
 
 export const PLAY_MODES = ['all', 'shuffle', 'first'];
 
+// The search must end before the action's timeout_seconds (90 s in the
+// manifest), with time left to start the renderer.
+export const SEARCH_BUDGET_MS = 75000;
+
 function requireRenderer(gladys, externalId) {
   if (!isRenderer(gladys, externalId)) {
     throw new Error('Pick a DLNA renderer');
@@ -44,7 +48,7 @@ export function createSceneActions(context) {
       const query = String(fields.query ?? '').trim();
       logger.info(`Scene action play_media <- ${by} "${query}" (${mode})`);
       const found = await withServer(context, fields.server, (server) =>
-        server.findMedia({ by, query }),
+        server.withDeadline(SEARCH_BUDGET_MS).findMedia({ by, query }),
       );
       // "first" keeps the server order (album order for an album or a folder).
       const items = mode === 'first' ? found.slice(0, 1) : found;

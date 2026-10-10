@@ -9,6 +9,7 @@ import assert from 'node:assert/strict';
 import { createFakeNetwork } from './helpers/fakeNetwork.js';
 import { serveLibrary } from './helpers/fakeLibrary.js';
 import { Registry } from '../src/registry.js';
+import { MediaServer, SearchTimeoutError } from '../src/upnp/server.js';
 
 const CONTROL = 'http://192.0.2.50:8200/ctl/ContentDir';
 
@@ -136,4 +137,42 @@ test('a quote in a search is escaped in the criteria', async () => {
     network.actions('Search')[0].args.SearchCriteria,
     /contains "Octopus's \\"Garden\\""/,
   );
+});
+
+test('a deadline stops a long crawl cleanly, with a clear error', async () => {
+  const network = createFakeNetwork();
+  const location = network.serve('minidlna');
+  const stats = serveLibrary(network, CONTROL, { searchCaps: '' });
+  let clock = 0;
+  // Every request of this slow server costs 2 seconds.
+  const slowFetch = async (url, init) => {
+    clock += 2000;
+    return network.fetch(url, init);
+  };
+  const registry = new Registry({ fetchImpl: network.fetch });
+  const [info] = await registry.describe(location);
+  const server = new MediaServer(info.device, { fetchImpl: slowFetch, now: () => clock });
+  await assert.rejects(
+    server.withDeadline(5000).findMedia({ by: 'artist', query: 'nobody' }),
+    (err) => err instanceof SearchTimeoutError && /within 5 s/.test(err.message),
+  );
+  assert.ok(stats.browse <= 3, `${stats.browse} Browse after the deadline`);
+  // The deadline belongs to the scoped view only.
+  const items = await server.findMedia({ by: 'artist', query: 'miles' });
+  assert.equal(items.length, 2);
+});
+
+test('a request cut by the deadline is reported as the deadline', async () => {
+  const network = createFakeNetwork();
+  const location = network.serve('minidlna');
+  const registry = new Registry({ fetchImpl: network.fetch });
+  const [info] = await registry.describe(location);
+  let clock = 0;
+  const hanging = async () => {
+    clock += 10000;
+    throw new DOMException('The operation was aborted due to timeout', 'TimeoutError');
+  };
+  const server = new MediaServer(info.device, { fetchImpl: hanging, now: () => clock });
+  await assert.rejects(server.withDeadline(3000).browse('0'), SearchTimeoutError);
+  await assert.rejects(server.browse('0'), /aborted/);
 });

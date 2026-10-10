@@ -5,6 +5,7 @@
 // -----------------------------------------------------------------------------
 
 import { DEVICE_KINDS, PARAMS, paramOf, parseDeviceExternalId } from './devices/index.js';
+import { SearchTimeoutError } from './upnp/server.js';
 
 export async function withServer({ gladys, registry }, externalId, work) {
   const parsed = parseDeviceExternalId(gladys, externalId);
@@ -20,7 +21,11 @@ export async function withServer({ gladys, registry }, externalId, work) {
   try {
     return await work(registry.clientOf(info), info);
   } catch (err) {
-    registry.forget(DEVICE_KINDS.SERVER, parsed.platformId);
+    // A slow search says nothing about the server's address; any other
+    // failure may: read its description again next time.
+    if (!(err instanceof SearchTimeoutError)) {
+      registry.forget(DEVICE_KINDS.SERVER, parsed.platformId);
+    }
     throw err;
   }
 }

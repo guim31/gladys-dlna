@@ -7,8 +7,8 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { readFile } from 'node:fs/promises';
-import { createActions } from '../src/actions.js';
-import { createSceneActions } from '../src/scenes.js';
+import { BROWSE_BUDGET_MS, createActions } from '../src/actions.js';
+import { createSceneActions, SEARCH_BUDGET_MS } from '../src/scenes.js';
 import { createWidgets } from '../src/widgets.js';
 import { SCENE_TRIGGERS } from '../src/poller.js';
 import { DEFAULT_CONFIG } from '../src/config.js';
@@ -245,4 +245,13 @@ test('field placeholders are multi-language objects', () => {
     assert.equal(typeof field.placeholder, 'object', `field "${field.key}": placeholder`);
     assert.ok(field.placeholder.en, `field "${field.key}": placeholder needs an English text`);
   }
+});
+
+test('server lookups end before the core gives up on the action', () => {
+  // A crawl of a big library is cut by its own deadline, with room left to
+  // start the renderer and answer, never by the core's timeout.
+  const playMedia = manifest.scene_actions.find((action) => action.key === 'play_media');
+  const browse = manifest.actions.find((action) => action.key === 'browse_server');
+  assert.ok(SEARCH_BUDGET_MS <= playMedia.timeout_seconds * 1000 - 10000);
+  assert.ok(BROWSE_BUDGET_MS <= browse.timeout_seconds * 1000 - 5000);
 });

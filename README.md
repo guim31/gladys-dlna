@@ -63,7 +63,7 @@ maker._
   announcement plays at the current volume. The "Play a URL" scene action has a volume field.
 - After an announcement, the previous media is not resumed.
 - Search quality depends on the server: when it has no `Search`, the integration crawls its folders
-  (bounded to a few hundred folders).
+  (bounded to a few hundred folders, and stopped after 75 seconds with a clear error).
 - Renderers that rewrite the URI of the media (proxies) can confuse the queue: it then stops at the
   end of the current track.
 
@@ -100,4 +100,4 @@ Releases are made by the **Release** workflow (Actions → Release): see [`CLAUD
 
 ## License
 
-Apache-2.0
+[Apache-2.0](LICENSE)
