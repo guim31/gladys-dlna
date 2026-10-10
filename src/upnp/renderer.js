@@ -6,6 +6,7 @@
 import { soapCall } from './soap.js';
 import { SERVICE_TYPES, findService } from './description.js';
 import { buildMetadata, parseDidl, parseDuration } from './didl.js';
+import { escapeXml } from './xml.js';
 
 const INSTANCE = { InstanceID: '0' };
 const MASTER = { InstanceID: '0', Channel: 'Master' };
@@ -45,6 +46,32 @@ export function describeMedia(positionInfo = {}, mediaInfo = {}) {
   };
 }
 
+/** The http form of an https URL, or null. */
+export function httpVariant(url) {
+  try {
+    const parsed = new URL(url);
+    if (parsed.protocol !== 'https:') return null;
+    parsed.protocol = 'http:';
+    if (parsed.port === '443') parsed.port = '';
+    return parsed.href;
+  } catch {
+    return null;
+  }
+}
+
+export class PlaybackNotStartedError extends Error {
+  constructor(url) {
+    super(
+      String(url).startsWith('https:')
+        ? 'The renderer did not start playing: it may not accept https URLs ' +
+            '(nor the http address of this stream)'
+        : 'The renderer did not start playing this URL: format not supported, ' +
+            'or URL not reachable from the renderer',
+    );
+    this.name = 'PlaybackNotStartedError';
+  }
+}
+
 export class Renderer {
   /**
    * @param {object} device parsed device of the description (see description.js)
@@ -60,6 +87,9 @@ export class Renderer {
     this.fetchImpl = fetchImpl;
     this.timeoutMs = timeoutMs;
     this.sink = null;
+    // How long a renderer is given to reach PLAYING after Play.
+    this.playWait = { timeoutMs: 6000, intervalMs: 500 };
+    this.sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
   }
 
   supports(service, action) {
@@ -140,11 +170,10 @@ export class Renderer {
     });
   }
 
-  /**
-   * Play a URL now. Many renderers refuse SetAVTransportURI while they play,
-   * so the current media is stopped first (a refused Stop is not an error).
-   */
-  async playUrl(url, { metadata, title, mime } = {}) {
+  /** Load a URL and press Play. Many renderers refuse SetAVTransportURI
+   * while they play, so the current media is stopped first (a refused Stop
+   * is not an error). */
+  async startUrl(url, metadata) {
     try {
       const { CurrentTransportState } = await this.av('GetTransportInfo');
       if (playbackOf(CurrentTransportState) !== PLAYBACK.STOPPED) {
@@ -153,8 +182,51 @@ export class Renderer {
     } catch {
       // Best effort: SetAVTransportURI below tells whether it worked.
     }
-    await this.setUri(url, metadata ?? buildMetadata({ url, title, mime }));
+    await this.setUri(url, metadata);
     await this.play();
+  }
+
+  /** Whether the renderer reaches PLAYING within `playWait.timeoutMs`. */
+  async waitForPlayback() {
+    const { timeoutMs, intervalMs } = this.playWait;
+    for (let waited = 0; ; waited += intervalMs) {
+      try {
+        const { CurrentTransportState } = await this.av('GetTransportInfo');
+        if (CurrentTransportState === 'PLAYING') return true;
+      } catch {
+        // A renderer busy loading may not answer: ask again.
+      }
+      if (waited >= timeoutMs) return false;
+      await this.sleep(intervalMs);
+    }
+  }
+
+  /**
+   * Play a URL now and make sure it plays. A renderer may accept the URL and
+   * Play (both answer 200) yet stay STOPPED: the real Denon AVR-S650H does so
+   * with every https stream, and plays the same stream in http. So an https
+   * URL that does not start is tried once in http; when nothing plays, the
+   * caller gets a clear error instead of a silent success.
+   * With `verify: false`, the call returns once Play is accepted (a device
+   * command must be acknowledged within 5 s): use `ensurePlaying` afterwards.
+   * Resolves the URL that plays.
+   */
+  async playUrl(url, { metadata, title, mime, verify = true } = {}) {
+    await this.startUrl(url, metadata ?? buildMetadata({ url, title, mime }));
+    return verify ? this.ensurePlaying(url, { metadata, title, mime }) : url;
+  }
+
+  async ensurePlaying(url, { metadata, title, mime } = {}) {
+    if (await this.waitForPlayback()) return url;
+    const fallback = httpVariant(url);
+    if (fallback) {
+      const fallbackMetadata = metadata
+        ? metadata.split(escapeXml(url)).join(escapeXml(fallback))
+        : buildMetadata({ url: fallback, title, mime });
+      await this.startUrl(fallback, fallbackMetadata);
+      if (await this.waitForPlayback()) return fallback;
+    }
+    throw new PlaybackNotStartedError(url);
   }
 
   /** Volume as a percentage of the range the renderer declares. */

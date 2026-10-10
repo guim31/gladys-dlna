@@ -7,7 +7,13 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { createFakeNetwork, soapFault } from './helpers/fakeNetwork.js';
 import { Registry } from '../src/registry.js';
-import { describeMedia, playbackOf, PLAYBACK } from '../src/upnp/renderer.js';
+import {
+  PlaybackNotStartedError,
+  describeMedia,
+  httpVariant,
+  playbackOf,
+  PLAYBACK,
+} from '../src/upnp/renderer.js';
 import { parseDidl } from '../src/upnp/didl.js';
 
 const DENON_AV = 'http://192.0.2.10:60006/upnp/control/renderer_dvc/AVTransport';
@@ -96,7 +102,14 @@ test('playUrl stops a playing renderer, sets the URI with metadata, then plays',
   network.onAction(DENON_AV, 'GetTransportInfo', () => ({ CurrentTransportState: 'PLAYING' }));
   await renderer.playUrl('http://radio.example/live.aac', { title: 'Radio & co' });
   const actions = network.calls.map((call) => call.action);
-  assert.deepEqual(actions, ['GetTransportInfo', 'Stop', 'SetAVTransportURI', 'Play']);
+  // Then the playback check: already PLAYING.
+  assert.deepEqual(actions, [
+    'GetTransportInfo',
+    'Stop',
+    'SetAVTransportURI',
+    'Play',
+    'GetTransportInfo',
+  ]);
   const set = network.actions('SetAVTransportURI')[0].args;
   assert.equal(set.InstanceID, '0');
   assert.equal(set.CurrentURI, 'http://radio.example/live.aac');
@@ -108,8 +121,99 @@ test('playUrl stops a playing renderer, sets the URI with metadata, then plays',
 
 test('playUrl does not stop a stopped renderer', async () => {
   const { network, renderer } = await rendererOf('denon-avr-s650h');
-  await renderer.playUrl('http://radio.example/live.mp3');
+  await renderer.playUrl('http://radio.example/live.mp3', { verify: false });
   assert.equal(network.actions('Stop').length, 0);
+});
+
+/** A renderer that, like the real Denon, accepts https URLs but only plays http. */
+async function httpOnlyRenderer({ playsHttp = true } = {}) {
+  const { network, renderer } = await rendererOf('denon-avr-s650h');
+  const state = { uri: '', transport: 'STOPPED' };
+  network.onAction(DENON_AV, 'GetTransportInfo', () => ({
+    CurrentTransportState: state.transport,
+  }));
+  network.onAction(DENON_AV, 'SetAVTransportURI', (args) => {
+    state.uri = args.CurrentURI;
+    state.transport = 'STOPPED';
+    return {};
+  });
+  network.onAction(DENON_AV, 'Play', () => {
+    // Accepted (200) in every case; only an http stream really starts.
+    if (playsHttp && state.uri.startsWith('http:')) state.transport = 'PLAYING';
+    return {};
+  });
+  renderer.playWait = { timeoutMs: 2000, intervalMs: 500 };
+  const waits = [];
+  renderer.sleep = async (ms) => {
+    waits.push(ms);
+  };
+  return { network, renderer, state, waits };
+}
+
+test('an https stream that does not start is retried once in http', async () => {
+  const { network, renderer, state, waits } = await httpOnlyRenderer();
+  const played = await renderer.playUrl('https://icecast.radiofrance.fr/fip-midfi.mp3', {
+    title: 'FIP',
+  });
+  assert.equal(played, 'http://icecast.radiofrance.fr/fip-midfi.mp3');
+  assert.equal(state.transport, 'PLAYING');
+  const uris = network.actions('SetAVTransportURI').map((call) => call.args.CurrentURI);
+  assert.deepEqual(uris, [
+    'https://icecast.radiofrance.fr/fip-midfi.mp3',
+    'http://icecast.radiofrance.fr/fip-midfi.mp3',
+  ]);
+  // The metadata follows the URL actually played.
+  const [item] = parseDidl(network.actions('SetAVTransportURI')[1].args.CurrentURIMetaData).items;
+  assert.equal(item.resources[0].uri, 'http://icecast.radiofrance.fr/fip-midfi.mp3');
+  assert.equal(item.title, 'FIP');
+  assert.equal(waits.length, 4, 'the https attempt was given its whole time');
+});
+
+test('a URL that never plays ends with a clear error', async () => {
+  const https = await httpOnlyRenderer({ playsHttp: false });
+  await assert.rejects(
+    https.renderer.playUrl('https://radio.example/live.mp3'),
+    (err) => err instanceof PlaybackNotStartedError && /may not accept https/.test(err.message),
+  );
+  assert.equal(https.network.actions('SetAVTransportURI').length, 2);
+
+  const http = await httpOnlyRenderer({ playsHttp: false });
+  await assert.rejects(
+    http.renderer.playUrl('http://radio.example/live.ogg'),
+    /did not start playing this URL/,
+  );
+  assert.equal(http.network.actions('SetAVTransportURI').length, 1, 'no retry for http');
+});
+
+test('a renderer that starts after a while is waited for', async () => {
+  const { network, renderer } = await rendererOf('denon-avr-s650h');
+  const answers = ['STOPPED', 'TRANSITIONING', 'TRANSITIONING', 'PLAYING'];
+  network.onAction(DENON_AV, 'GetTransportInfo', () => ({
+    CurrentTransportState: answers.shift() ?? 'PLAYING',
+  }));
+  renderer.sleep = async () => {};
+  assert.equal(
+    await renderer.playUrl('https://radio.example/live.mp3'),
+    'https://radio.example/live.mp3',
+  );
+  assert.equal(network.actions('SetAVTransportURI').length, 1);
+});
+
+test('httpVariant', () => {
+  assert.equal(httpVariant('https://h.example/a?b=1'), 'http://h.example/a?b=1');
+  assert.equal(httpVariant('https://h.example:443/a'), 'http://h.example/a');
+  assert.equal(httpVariant('https://h.example:8443/a'), 'http://h.example:8443/a');
+  assert.equal(httpVariant('http://h.example/a'), null);
+  assert.equal(httpVariant('nope'), null);
+});
+
+test('the Denon empty artist and album ("") read as empty', () => {
+  const metadata =
+    '<DIDL-Lite xmlns:dc="http://purl.org/dc/elements/1.1/" xmlns:upnp="urn:schemas-upnp-org:metadata-1-0/upnp/">' +
+    '<item><dc:title>fip-midfi.mp3</dc:title><upnp:artist>""</upnp:artist>' +
+    '<upnp:album> "" </upnp:album><dc:creator>\'\'</dc:creator></item></DIDL-Lite>';
+  const media = describeMedia({ TrackMetaData: metadata, TrackURI: 'http://x' }, {});
+  assert.deepEqual(media, { title: 'fip-midfi.mp3', artist: '', album: '', uri: 'http://x' });
 });
 
 test('a refused action throws with the UPnP error', async () => {

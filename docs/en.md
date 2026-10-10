@@ -112,16 +112,19 @@ useful to play media from a server or announcements, next to their own integrati
 
 ## What has been checked on real hardware
 
-- **Checked against a real Denon AVR-S650H** (answers captured on the amplifier, stopped): its
-  description (renderer and media server embedded in a Denon root device, port 60006), its four
-  service descriptions, and its answers to the state requests (transport, position, media, volume,
-  mute, supported formats). The tests replay them: the amplifier is discovered with all its
-  features, volume and mute are read correctly.
-- **Not checked on real hardware yet**: the commands (play, pause, stop, volume, mute), playing a
-  URL or a server track on the Denon, the queue and its gapless transitions, the network search run
-  by Gladys, and searching a real media server (MiniDLNA, Plex, Jellyfin). They are covered by tests
-  on simulated devices built from public formats. Please report any device that misbehaves, with
-  the logs of the integration.
+- **Checked for real on a Denon AVR-S650H** (playback, pause, volume, mute, stop, browsing of the
+  built-in server): an http stream plays, the position advances, pause and resume work, the volume
+  set in Gladys is the volume of the amplifier (15 in Gladys is MV15), mute is set and read back,
+  stop stops, and the built-in media server is browsed. The amplifier wakes from standby by itself
+  on a command. Its description, service descriptions and state answers are replayed by the tests.
+- **https streams on the Denon**: it accepts an https URL and then never plays it, while the same
+  stream in http plays at once. The integration therefore checks that playback really starts; an
+  https URL that does not start is tried once in http, and when nothing plays the scene action
+  fails with a clear message ("the renderer did not start playing: it may not accept https URLs").
+- **Not checked on real hardware yet**: the play queue and its gapless transitions, the network
+  search run by Gladys, and searching a real media server (MiniDLNA, Plex, Jellyfin). They are
+  covered by tests on simulated devices built from public formats. Please report any device that
+  misbehaves, with the logs of the integration.
 
 ## Troubleshooting
 
@@ -131,4 +134,5 @@ useful to play media from a server or announcements, next to their own integrati
 - **A command fails with "701"** (transition not available): the renderer refuses this command in
   its current state, for instance Play with nothing loaded.
 - **A file or a radio does not play**: the renderer must support its format, and reach its URL
-  itself (an `https` radio may not play on an old renderer: try its `http` address).
+  itself. Many renderers only play `http`: the integration retries an `https` URL in `http` by
+  itself, but some streams only exist in `https`.

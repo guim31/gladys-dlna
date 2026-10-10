@@ -10,6 +10,13 @@ the notes of the version's GitHub Release.
 
 ## [Unreleased]
 
+### Fixed
+
+- An https stream that a renderer accepts but never plays (the Denon AVR-S650H does so) is retried
+  once in http; when nothing plays, the scene action fails with a clear message instead of a silent
+  success.
+- An empty artist or album sent as `""` (Denon) is no longer shown as two quotes.
+
 ## [1.0.1] - 2026-10-10
 
 ### Added

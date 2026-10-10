@@ -380,7 +380,9 @@ export class RendererManager {
     entry.queue.preloaded = false;
     entry.queue.startedAt = this.now();
     entry.lastPlaying = null;
-    await renderer.playUrl(track.uri, { metadata: track.metadata });
+    // Server tracks are plain http, and a Next pressed in Gladys must be
+    // acknowledged within 5 s: no playback check here.
+    await renderer.playUrl(track.uri, { metadata: track.metadata, verify: false });
     await this.preloadNext(entry, renderer);
   }
 
@@ -497,8 +499,9 @@ export class RendererManager {
         break;
       case RENDERER_FEATURES.NOTIFICATION:
         // The core's "play a notification" action sends the URL of a Gladys
-        // Plus text-to-speech MP3.
-        await this.playUrl(externalId, String(value), { title: 'Gladys' });
+        // Plus text-to-speech MP3. The command is acknowledged within 5 s: the
+        // playback check (and the http retry of an https URL) goes on after.
+        await this.playUrl(externalId, String(value), { title: 'Gladys', background: true });
         return;
       default:
         throw new Error(`Unsupported feature: ${featureKey}`);
@@ -537,7 +540,7 @@ export class RendererManager {
   }
 
   /** Play a URL (web radio, announcement); drops the queue. */
-  async playUrl(externalId, url, { title, volume } = {}) {
+  async playUrl(externalId, url, { title, volume, background = false } = {}) {
     const entry = this.entryOf(externalId);
     const renderer = await this.rendererOf(entry);
     entry.queue = null;
@@ -545,8 +548,16 @@ export class RendererManager {
     if (Number.isFinite(volume) && renderer.hasVolume) {
       await renderer.setVolume(volume);
     }
-    await renderer.playUrl(url, { title });
     this.refreshSoon(entry);
+    if (!background) {
+      return renderer.playUrl(url, { title });
+    }
+    await renderer.playUrl(url, { title, verify: false });
+    this.pending = renderer
+      .ensurePlaying(url, { title })
+      .catch((err) => logger.warn(`${entry.device.name}: ${err.message}`))
+      .finally(() => this.refreshSoon(entry));
+    return url;
   }
 
   /**

@@ -320,3 +320,38 @@ test('the now-playing text', () => {
   assert.equal(formatNowPlaying({}), NOTHING_PLAYING);
   assert.equal(formatNowPlaying({ title: 'x'.repeat(500) }).length, 200);
 });
+
+test('a notification is acknowledged at once, the https retry runs after', async () => {
+  const denon = await scriptedDenon();
+  const { manager, id, state, network } = denon;
+  const AV_URL = 'http://192.0.2.10:60006/upnp/control/renderer_dvc/AVTransport';
+  network.onAction(AV_URL, 'Play', () => {
+    // Like the real Denon: an https stream is accepted and stays STOPPED.
+    if (state.uri.startsWith('http:')) state.transport = 'PLAYING';
+    return {};
+  });
+  const renderer = await manager.rendererOf(manager.entries.get(id));
+  renderer.sleep = async () => {};
+
+  await manager.command(id, RENDERER_FEATURES.NOTIFICATION, 'https://tts.example/abc.mp3');
+  assert.equal(state.uri, 'https://tts.example/abc.mp3', 'acknowledged before any retry');
+  await manager.pending;
+  assert.equal(state.uri, 'http://tts.example/abc.mp3');
+  assert.equal(state.transport, 'PLAYING');
+});
+
+test('a scene URL that never plays fails with the reason', async () => {
+  const denon = await scriptedDenon();
+  const { manager, id, network } = denon;
+  network.onAction(
+    'http://192.0.2.10:60006/upnp/control/renderer_dvc/AVTransport',
+    'Play',
+    () => ({}),
+  );
+  const renderer = await manager.rendererOf(manager.entries.get(id));
+  renderer.sleep = async () => {};
+  await assert.rejects(
+    manager.playUrl(id, 'https://radio.example/live.mp3'),
+    /may not accept https/,
+  );
+});
