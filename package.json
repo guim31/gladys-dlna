@@ -1,6 +1,6 @@
 {
   "name": "gladys-dlna",
-  "version": "1.0.1",
+  "version": "1.0.2",
   "private": true,
   "description": "DLNA / UPnP AV integration for Gladys Assistant: renderers, media servers, scenes and a dashboard widget, 100% local.",
   "type": "module",
