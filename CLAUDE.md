@@ -34,13 +34,16 @@ pushing.
 index.js                          SDK wiring only: handlers registered before connect()
 src/upnp/                         UPnP layer, no dependency: xml.js (reader), http.js (bounded fetch),
                                   soap.js, description.js (SSDP, descriptions, SCPD), didl.js,
-                                  renderer.js (AVTransport, RenderingControl), server.js (ContentDirectory)
+                                  renderer.js (AVTransport, RenderingControl), server.js (ContentDirectory),
+                                  icy.js (web radio name from its ICY headers)
 src/registry.js                   description URL → known devices, capabilities, cached clients
 src/discovery.js                  mediated SSDP scan + manual URLs + created devices → Discovery tab
 src/devices/                      renderer.js / server.js discovery payloads, index.js ids and params
 src/poller.js                     renderer polling, commands, play queue, scene triggers
 src/states.js                     publish only the changed states
-src/actions.js, scenes.js, widgets.js  manifest actions, scene actions, the "player" widget
+src/actions.js, scenes.js, widgets.js  manifest actions, scene actions, the "player" and "favorites" widgets
+src/favorites.js, playback.js     favorites of the configuration; what scenes, favorites and widgets share
+src/i18n.js, messages.js, errors.js  languages (en, fr, de, es), user messages, UPnP refusals
 src/config.js                     DEFAULT_CONFIG (mirrors the manifest defaults) + normalization
 gladys-assistant-integration.json manifest: name, config_schema, actions, image...
 docs/en.md, docs/fr.md            user documentation, re-hosted by Gladys (mandatory)
@@ -74,8 +77,11 @@ test/                             node --test; helpers/fakeNetwork.js serves fix
   `type: "provider"`: 5.1.0). `test/manifest.test.js` ties the manifest to the
   code (defaults, action, scene and widget handlers): change both sides
   together.
-- **User-facing text** is bilingual (English and French): action messages,
-  manifest texts, and `docs/en.md` / `docs/fr.md`, kept in sync.
+- **User-facing text** exists in English, French, German and Spanish (the
+  languages of Gladys): action messages, manifest texts, widget contents,
+  errors. `test/i18n.test.js` fails on a missing or empty language. The user
+  documentation stays `docs/en.md` / `docs/fr.md`, kept in sync: the store
+  only re-hosts these two.
 - **Style.** Prettier formats, ESLint catches mistakes. Comments explain why,
   in English. Tests never touch the network.
 
@@ -169,6 +175,12 @@ code de ce dépôt. Compléter ce fichier quand un nouveau piège est découvert
   ne pas conclure d'un STOPPED sans savoir si l'appareil sortait de veille. Il décrit un artiste ou
   un album inconnu par `""` (deux guillemets) : `cleanText` les vide.
 - `publishStates` (lot) : un état texte part dans `text`, pas dans `state`.
+- **Favoris** : groupes de champs numérotés `favorite_<n>_<champ>` (le `config_schema` n'a pas de
+  liste). Le serveur d'un favori est un **nom** (champ texte), pas un `select` `source: "devices"` :
+  voir le piège 422 plus bas.
+- **Nom d'une radio web** : `icy-name` du flux, demandé par `Icy-MetaData: 1` (une requête, 2,5 s,
+  au plus le premier bloc de métadonnées, puis coupée), sinon le `StreamTitle` du premier bloc,
+  sinon l'URL. Seulement quand aucun titre n'est donné : la notification du cœur passe « Gladys ».
 - Le SDK publié (0.14.0) n'a ni `publishChangedStates` ni `/testing`, que le README de `master`
   documente déjà.
 
@@ -177,6 +189,14 @@ code de ce dépôt. Compléter ce fichier quand un nouveau piège est découvert
 - Les champs `number` sont rendus **sans `step`** : le navigateur n'accepte alors que `min + k`.
   Min et défaut **entiers** seulement ; une valeur décimale passe par un `select` ou par un
   `string` parsé (virgule acceptée).
+- **Un `select` de `config_schema` doit toujours valoir une de ses options** : le cœur
+  (`validateConfigValue`) refuse en 422 la valeur vide (option « — » du front) comme un appareil
+  supprimé d'une liste `source: "devices"`, et le front renvoie à chaque enregistrement toutes les
+  valeurs stockées. Un `select` d'appareil facultatif dans la configuration bloque donc toute la
+  configuration dès que l'appareil disparaît : préférer un champ texte (nom).
+- **Langues** : le front existe en `en`, `fr`, `de`, `es` (repli sur `en`) ; le store ne réhéberge
+  que `docs/en.md` et `docs/fr.md` (`DOCS_LANGUAGES`), et le front ouvre `docs[langue] || docs.en` :
+  une doc `de`/`es` ne serait jamais lue.
 - Un champ `secret` dans les `fields` d'une **action** est impossible à remplir, et une action
   n'applique **aucun `default`** tout en exigeant les champs `required` (422). Issues
   GladysAssistant/Gladys#3154 et #3155.

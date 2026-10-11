@@ -13,7 +13,7 @@ import { scriptedDenon, AV, RC } from './helpers/scriptedRenderer.js';
 import { soapFault } from './helpers/fakeNetwork.js';
 import { UpnpError, parseResponse } from '../src/upnp/soap.js';
 import { RENDERER_FEATURES } from '../src/devices/renderer.js';
-import { PLAYER_WIDGET, createWidgets } from '../src/widgets.js';
+import { PLAYER_WIDGET, createWidgets, TEXTS } from '../src/widgets.js';
 import {
   COMMANDS,
   NO_DLNA_MEDIA,
@@ -156,7 +156,7 @@ test('a Stop accepted with no DLNA media loaded is not reported as "Stopped"', a
   assert.deepEqual(await stop(), STOP_WITHOUT_DLNA_MEDIA);
   network.onAction(AV, 'GetTransportInfo', () => ({ CurrentTransportState: state.transport }));
   state.uri = 'http://192.0.2.50:8200/MediaItems/1.flac';
-  assert.deepEqual(await stop(), { en: 'Stopped', fr: 'Arrêté' });
+  assert.deepEqual(await stop(), TEXTS.STOPPED);
 });
 
 test('a 701 on the media Gladys loaded is not "another source"', async () => {

@@ -22,6 +22,9 @@ import { PLAYBACK } from './upnp/renderer.js';
 import { UpnpError } from './upnp/soap.js';
 import { buildMetadata, mimeOf, pickResource } from './upnp/didl.js';
 import { COMMANDS, toUserError } from './errors.js';
+import { streamTitleOf } from './upnp/icy.js';
+import { UserError } from './i18n.js';
+import { MESSAGES } from './messages.js';
 
 const logger = createLogger({ name: 'renderers' });
 
@@ -123,6 +126,8 @@ export class RendererManager {
     // The language of the configuration: the core relays the error text of
     // a command without telling the user's language.
     language = () => 'en',
+    // The name of a web radio played without a title (ICY headers).
+    streamTitle = (url) => streamTitleOf(url, { fetchImpl: registry?.fetchImpl }),
   }) {
     this.gladys = gladys;
     this.registry = registry;
@@ -133,6 +138,7 @@ export class RendererManager {
     this.now = now;
     this.random = random;
     this.language = language;
+    this.streamTitle = streamTitle;
     this.entries = new Map();
     this.active = true;
   }
@@ -170,6 +176,11 @@ export class RendererManager {
           soon: false,
           playToken: 0,
           loadedUri: null,
+          // The URL played by Gladys and the title it was given, shown when
+          // the renderer describes it by its bare URL (or not at all).
+          media: null,
+          // The favorite Gladys started, while it is what the renderer holds.
+          favorite: null,
         });
         this.schedule(this.entries.get(externalId), 0);
       }
@@ -193,7 +204,7 @@ export class RendererManager {
   entryOf(externalId) {
     const entry = this.entries.get(externalId);
     if (!entry) {
-      throw new Error(`Unknown renderer ${externalId}: add it to Gladys first`);
+      throw new UserError(MESSAGES.UNKNOWN_RENDERER, this.language());
     }
     return entry;
   }
@@ -282,8 +293,36 @@ export class RendererManager {
       entry.soon = true;
       return status;
     }
+    this.nameMedia(entry, status);
+    if (this.followFavorite(entry, status)) this.onDisplayChange(entry.externalId);
     await this.applyStatus(entry, status);
     return status;
+  }
+
+  /** The title Gladys gave a URL, when the renderer only knows the URL. */
+  nameMedia(entry, status) {
+    const media = entry.media;
+    if (!media?.title || !status.uri || status.uri !== media.uri) return;
+    if (!status.title || status.title === status.uri) status.title = media.title;
+  }
+
+  /**
+   * Forget the current favorite once the renderer plays something else: its
+   * queue ended or was dropped, or another URL plays (after the start grace).
+   * True when it was forgotten.
+   */
+  followFavorite(entry, status) {
+    const favorite = entry.favorite;
+    if (!favorite) return false;
+    let gone;
+    if (favorite.queue) {
+      gone = !entry.queue;
+    } else {
+      const settled = this.now() - favorite.startedAt > START_GRACE_MS;
+      gone = settled && !!status.uri && !isTrack(status, favorite);
+    }
+    if (gone) entry.favorite = null;
+    return gone;
   }
 
   async publishTransport(entry, transport) {
@@ -598,14 +637,24 @@ export class RendererManager {
     return true;
   }
 
-  /** Play a URL (web radio, announcement); drops the queue. */
-  async playUrl(externalId, url, { title, volume } = {}) {
+  /**
+   * Play a URL (web radio, announcement); drops the queue. Without a title,
+   * a web radio is named after its ICY headers, else after its URL.
+   * `favorite`: the favorite this URL plays (see favorites.js).
+   */
+  async playUrl(externalId, url, { title, volume, favorite } = {}) {
     const entry = this.entryOf(externalId);
     const renderer = await this.rendererOf(entry);
+    const name = title || (await this.streamTitle(url).catch(() => null)) || undefined;
     entry.queue = null;
     entry.lastPlaying = null;
     entry.playToken += 1;
     entry.loadedUri = url;
+    entry.media = { uri: url, title: name ?? '' };
+    entry.favorite = favorite
+      ? { ...favorite, uri: url, title: name ?? '', queue: false, startedAt: this.now() }
+      : null;
+    this.onDisplayChange(entry.externalId);
     const failed = (err) => this.explainFailure(entry, renderer, err, { mediaLoaded: true });
     if (Number.isFinite(volume) && renderer.hasVolume) {
       await renderer.setVolume(volume).catch(failed);
@@ -613,8 +662,8 @@ export class RendererManager {
     this.refreshSoon(entry);
     // Answer once the renderer accepted Play: waking from standby can take
     // more than a minute, longer than a command or a scene may wait.
-    await renderer.playUrl(url, { title, verify: false }).catch(failed);
-    this.followStart(entry, renderer, url, { title });
+    await renderer.playUrl(url, { title: name, verify: false }).catch(failed);
+    this.followStart(entry, renderer, url, { title: name });
     return url;
   }
 
@@ -634,7 +683,7 @@ export class RendererManager {
   /**
    * Play ContentDirectory items as a queue. Resolves the first track played.
    */
-  async playItems(externalId, items, { shuffled = false } = {}) {
+  async playItems(externalId, items, { shuffled = false, favorite } = {}) {
     const entry = this.entryOf(externalId);
     const renderer = await this.rendererOf(entry);
     const sink = await renderer.getSink();
@@ -643,10 +692,13 @@ export class RendererManager {
       .map((item) => trackOf(item, sink))
       .filter(Boolean);
     if (tracks.length === 0) {
-      throw new Error('Nothing playable in the results');
+      throw new UserError(MESSAGES.NOTHING_PLAYABLE, this.language());
     }
     if (shuffled) shuffle(tracks, this.random);
     entry.queue = { tracks, index: 0, preloaded: false, noPreload: false, startedAt: this.now() };
+    entry.media = null;
+    entry.favorite = favorite ? { ...favorite, queue: true, startedAt: this.now() } : null;
+    this.onDisplayChange(entry.externalId);
     await this.startTrack(entry, renderer, tracks[0]).catch((err) =>
       this.explainFailure(entry, renderer, err, { mediaLoaded: true }),
     );
@@ -668,6 +720,7 @@ export class RendererManager {
       queue: entry.queue ? { index: entry.queue.index, length: entry.queue.tracks.length } : null,
       hasVolume: this.hasFeature(entry, RENDERER_FEATURES.VOLUME),
       hasMute: this.hasFeature(entry, RENDERER_FEATURES.MUTE),
+      favorite: entry.favorite,
     };
   }
 }

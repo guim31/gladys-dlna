@@ -23,8 +23,10 @@ sur votre réseau local : ni compte, ni cloud.
 3. Certains appareils sont les deux : un ampli Denon, par exemple, est un lecteur et un petit
    serveur multimédia. Le serveur est alors listé avec « (serveur multimédia) » après son nom.
 
-**Langue des noms de fonctionnalités** : Gladys garde les noms d'un appareil une fois ajouté.
-Choisissez la langue dans **Configuration** avant d'ajouter les appareils.
+**Langue des noms et des messages** (anglais, français, allemand ou espagnol) : Gladys garde les
+noms d'un appareil une fois ajouté, choisissez donc la langue dans **Configuration** avant
+d'ajouter les appareils. C'est aussi la langue des messages d'erreur des commandes d'appareils et
+des actions de scène (Gladys ne transmet pas à une intégration la langue de son utilisateur).
 
 **Un appareil introuvable** : la découverte SSDP ne fonctionne que sur le réseau de Gladys.
 Trouvez l'URL de la description UPnP de l'appareil (dans la documentation de l'appareil ou du
@@ -89,7 +91,12 @@ toutes les 5 minutes).
 
 - **Lire une URL sur un lecteur DLNA** : une radio web, un son ou un fichier d'annonce, par son URL
   http(s), avec un titre et un volume facultatifs. L'URL doit être joignable par le lecteur
-  lui-même.
+  lui-même. Laissé vide, le titre est le nom que la radio web se donne (son en-tête `icy-name`, ou
+  à défaut le titre diffusé au démarrage du flux), et l'URL en dernier recours : l'intégration
+  interroge le flux une fois, 2,5 secondes au plus, sans le télécharger.
+
+- **Lire un favori DLNA** : lit sur un lecteur l'un des favoris de la configuration (voir plus
+  bas), avec un volume facultatif. L'action renvoie si la lecture a démarré et le nom du favori.
 
 **File d'attente** : un lecteur DLNA ne lit qu'un média à la fois. Pour un album ou un dossier,
 l'intégration garde la liste et lui passe les pistes l'une après l'autre (sans blanc si le lecteur
@@ -101,11 +108,35 @@ demande Gladys Plus pour la synthèse vocale). Elle joue au volume courant (le c
 son volume aux intégrations), et le média précédent ne reprend pas ensuite. Pour régler le volume
 d'une annonce, placez avant elle une action de contrôle d'appareil sur sa fonctionnalité Volume.
 
+## Favoris
+
+Dans **Configuration**, la partie **Favoris** accueille jusqu'à 8 favoris, chacun un groupe de
+champs numéroté :
+
+- **Nom** : affiché sur le bouton (24 caractères y tiennent). Laissé vide, le favori prend le nom
+  de l'hôte de son URL ou celui de sa recherche.
+- **URL** : une radio web ou un fichier, par son URL http(s) ; **ou** une recherche sur un
+  **serveur multimédia** : le nom du serveur tel qu'il apparaît dans Gladys (une partie suffit ;
+  vide quand un seul serveur est ajouté), le critère (tout, titre, artiste, album, dossier ou
+  playlist), la recherche (`Abbey Road`, `Musique/Jazz`) et la façon de lire ce qui est trouvé
+  (dans l'ordre, en aléatoire, le premier résultat). Si les deux sont remplis, l'URL l'emporte. Un
+  favori sans l'un ni l'autre est ignoré.
+
+Le serveur se donne par son nom plutôt que dans une liste, exprès : Gladys refuse d'enregistrer une
+configuration dont une liste contient un appareil qui n'existe plus, et un serveur supprimé
+bloquerait toute modification ultérieure de la configuration.
+
 ## Tableau de bord
 
 Ajoutez le widget **Lecteur DLNA** et choisissez un lecteur dans ses réglages : il affiche le
 titre, l'album, l'état, la position dans la file, la sourdine, une jauge de volume en direct, et
 quatre boutons (lecture/pause, stop, volume − et +, par pas de 5 %).
+
+Ajoutez le widget **Favoris DLNA**, choisissez un lecteur et les favoris à afficher : un bouton par
+favori, quatre au plus par widget (Gladys admet quatre boutons par widget). Posez plusieurs widgets
+pour atteindre plus de favoris. Laissé vide, le widget affiche les quatre premiers favoris de la
+configuration. Il affiche aussi le favori que le lecteur tient en ce moment, avec son état, et
+coche son bouton : il y reste jusqu'à ce qu'autre chose soit lu sur le lecteur.
 
 ## Actions de configuration
 
@@ -141,8 +172,8 @@ complément de leur intégration.
 - **Vérifié par un utilisateur sur une Sennheiser AMBEO Soundbar** : trouvée seule à l'installation,
   volume réglé depuis le widget, y compris pendant une lecture Spotify Connect.
 - **Pas encore vérifié sur du vrai matériel** : la file d'attente et ses enchaînements sans blanc,
-  la recherche réseau menée par Gladys, et la recherche sur un vrai serveur (MiniDLNA, Plex,
-  Jellyfin). Ils sont couverts par des tests sur des appareils simulés, construits d'après des
+  la recherche réseau menée par Gladys, la recherche sur un vrai serveur (MiniDLNA, Plex,
+  Jellyfin), les favoris et leur widget, et le nom de station lu sur une vraie radio web. Ils sont couverts par des tests sur des appareils simulés, construits d'après des
   formats publics. Signalez tout appareil qui se comporte mal, avec les logs de l'intégration.
 
 ## Dépannage
@@ -160,6 +191,9 @@ complément de leur intégration.
   occupé…) ; son code UPnP est dans les logs de l'intégration. Le message suit la langue de la
   configuration, sauf sur les boutons du widget pour « rien en DLNA », affiché dans la langue de
   l'utilisateur.
+- **Une radio web affiche son URL au lieu de son nom** : le flux ne donne pas de nom (pas d'en-tête
+  `icy-name`), ou n'a pas répondu en 2,5 secondes. Remplissez le titre de l'action de scène, ou
+  faites-en un favori nommé.
 - **Un fichier ou une radio ne se lit pas** : le lecteur doit accepter son format et joindre son
   URL lui-même. Un lecteur en veille peut mettre une dizaine de secondes à démarrer : l'intégration
   l'attend.

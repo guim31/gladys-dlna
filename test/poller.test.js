@@ -142,7 +142,7 @@ test('device commands reach the renderer and poll again soon', async () => {
   await assert.rejects(manager.command(id, 'unknown', 1), /Unsupported feature/);
   await assert.rejects(
     manager.command('ext:dlna:renderer:nope', RENDERER_FEATURES.PLAY, 1),
-    /Unknown renderer/,
+    /not in Gladys/,
   );
 });
 
@@ -281,7 +281,7 @@ test('nothing playable in the results is an error', async () => {
   const denon = await scriptedDenon();
   await assert.rejects(
     denon.manager.playItems(denon.id, [{ title: 'x', resources: [] }]),
-    /Nothing playable/,
+    /Nothing the renderer can play/,
   );
 });
 

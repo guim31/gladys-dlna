@@ -9,7 +9,9 @@ test('normalizeConfig returns the defaults when called with no argument', () => 
 
 test('normalizeConfig keeps user values and refuses an unknown language', () => {
   assert.equal(normalizeConfig({ language: 'fr' }).language, 'fr');
-  assert.equal(normalizeConfig({ language: 'de' }).language, 'en');
+  assert.equal(normalizeConfig({ language: 'de' }).language, 'de');
+  assert.equal(normalizeConfig({ language: 'es' }).language, 'es');
+  assert.equal(normalizeConfig({ language: 'it' }).language, 'en');
   assert.equal(normalizeConfig({ description_urls: 'http://a/' }).description_urls, 'http://a/');
 });
 
