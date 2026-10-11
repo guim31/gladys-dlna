@@ -10,6 +10,11 @@ the notes of the version's GitHub Release.
 
 ## [Unreleased]
 
+### Changed
+
+- Docs: volume and mute work whatever the source (Spotify Connect, AirPlay, HDMI…), while the
+  playback state and commands only follow DLNA; a Sennheiser AMBEO Soundbar checked by a user.
+
 ## [1.0.3] - 2026-10-10
 
 ## [1.0.2] - 2026-10-10

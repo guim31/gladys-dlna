@@ -50,6 +50,13 @@ et relancez la recherche.
 Volume et Sourdine n'apparaissent que si le lecteur les propose. L'appareil fonctionne avec le
 widget **Musique** du tableau de bord (précédent, lecture/pause, suivant, volume).
 
+**Ce que l'appareil joue par une autre voie** (Spotify Connect, AirPlay, Chromecast, une entrée
+HDMI…) : le **volume** et la **sourdine** sont ceux de l'appareil, donc ils se règlent depuis Gladys
+quelle que soit la source. Par exemple, une barre de son qui joue Spotify, même avec un compte
+gratuit, se pilote en volume depuis Gladys (constaté sur une Sennheiser AMBEO Soundbar). En
+revanche, l'état de lecture, le titre en cours et les commandes de lecture ne suivent que ce qui est
+joué **en DLNA** : pendant une écoute Spotify, l'appareil affiche « arrêté ».
+
 L'état est rafraîchi toutes les quelques secondes pendant la lecture, toutes les 15 secondes
 sinon. Un lecteur éteint affiche le badge **injoignable** et il est vérifié une fois par minute ;
 s'il revient sur une autre adresse, l'intégration le retrouve seule (une recherche réseau, au plus
@@ -131,6 +138,8 @@ complément de leur intégration.
   Les actions de scène répondent dès que le lecteur a accepté la commande ; un démarrage qui ne
   vient jamais est noté dans les logs de l'intégration. Les flux https se lisent comme les flux
   http.
+- **Vérifié par un utilisateur sur une Sennheiser AMBEO Soundbar** : trouvée seule à l'installation,
+  volume réglé depuis le widget, y compris pendant une lecture Spotify Connect.
 - **Pas encore vérifié sur du vrai matériel** : la file d'attente et ses enchaînements sans blanc,
   la recherche réseau menée par Gladys, et la recherche sur un vrai serveur (MiniDLNA, Plex,
   Jellyfin). Ils sont couverts par des tests sur des appareils simulés, construits d'après des

@@ -49,6 +49,13 @@ search again.
 Volume and Mute only appear when the renderer has them. The device works with the core **Music**
 widget of the dashboard (previous, play/pause, next, volume).
 
+**What the device plays some other way** (Spotify Connect, AirPlay, Chromecast, an HDMI input…):
+**volume** and **mute** are the device's own, so Gladys sets them whatever the source. For example,
+a soundbar playing Spotify, even on a free account, has its volume controlled from Gladys (seen on
+a Sennheiser AMBEO Soundbar). The playback state, the now-playing title and the transport commands,
+on the other hand, only follow what is played **over DLNA**: during a Spotify session, the device
+shows "stopped".
+
 The state is refreshed every few seconds while playing, every 15 seconds otherwise. A renderer
 that is off shows the **unreachable** badge and is checked once a minute; when it comes back on
 another address, the integration finds it again by itself (a network search, at most every 5
@@ -126,6 +133,8 @@ useful to play media from a server or announcements, next to their own integrati
   as soon as another command or media comes in. Scene actions answer as soon as the renderer
   accepted the command; a start that never comes is written in the logs of the integration. https
   streams play like http ones.
+- **Checked by a user on a Sennheiser AMBEO Soundbar**: found by itself at install time, volume set
+  from the widget, including during a Spotify Connect session.
 - **Not checked on real hardware yet**: the play queue and its gapless transitions, the network
   search run by Gladys, and searching a real media server (MiniDLNA, Plex, Jellyfin). They are
   covered by tests on simulated devices built from public formats. Please report any device that

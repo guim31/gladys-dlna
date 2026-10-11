@@ -57,7 +57,10 @@ maker._
 ## Limitations
 
 - Checked for real on a Denon AVR-S650H (playback, pause, volume, mute, stop, browsing of the
-  built-in server). A renderer in standby can take up to a minute to start: the integration
+  built-in server), and by a user on a Sennheiser AMBEO Soundbar (discovery, volume).
+- Media played some other way (Spotify Connect, AirPlay, an HDMI input…): volume and mute still
+  work from Gladys, but the playback state, the title and the transport commands only follow what
+  is played over DLNA. A renderer in standby can take up to a minute to start: the integration
   follows every start for up to 75 s in the background, pressing Play again every 5 s while the
   wake-up ignores it.
 - **Sonos, Samsung TV and LG webOS** have their own integrations, which do more than DLNA can
