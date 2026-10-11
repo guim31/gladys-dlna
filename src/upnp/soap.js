@@ -78,5 +78,13 @@ export async function soapCall({ controlUrl, serviceType, action, args, timeoutM
     timeoutMs,
     fetchImpl,
   });
-  return parseResponse(action, text, status);
+  try {
+    return parseResponse(action, text, status);
+  } catch (err) {
+    // The same code means different things in two services (701 is
+    // "Transition not available" in AVTransport, "Invalid Name" in
+    // RenderingControl): the error says which service answered.
+    err.serviceType = serviceType;
+    throw err;
+  }
 }

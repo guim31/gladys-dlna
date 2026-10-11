@@ -10,6 +10,17 @@ the notes of the version's GitHub Release.
 
 ## [Unreleased]
 
+### Fixed
+
+- A command refused by the renderer now reads as its meaning instead of a raw UPnP error such as
+  "Play failed: 701 Transition not available": on a device playing another source (Spotify,
+  AirPlay, HDMI…), Play, Pause, Stop, Next and Previous say there is nothing to act on over DLNA
+  and point to the app of that source. The codes 402, 501, 702, 704, 705, 714, 715, 716, 718 are
+  explained too; the raw code stays in the logs of the integration.
+- The widget's Stop no longer answers "Stopped" when no DLNA media was loaded.
+- The follow-up of a playback start gives up at once when the renderer lost the media, refuses to
+  load it again and refuses Play (701), instead of pressing Play for 75 s.
+
 ### Changed
 
 - Docs: volume and mute work whatever the source (Spotify Connect, AirPlay, HDMI…), while the

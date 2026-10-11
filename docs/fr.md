@@ -150,8 +150,16 @@ complément de leur intégration.
 - **Rien dans l'onglet Découverte** : vérifiez que les appareils sont allumés et sur le même réseau
   que Gladys ; lisez les logs de l'intégration (`Discovery: N SSDP answer(s)…`). Sinon, ajoutez une
   URL de description à la main.
-- **Une commande échoue avec « 701 »** (transition impossible) : le lecteur refuse cette commande
-  dans son état actuel, par exemple Lecture sans rien de chargé.
+- **« Le lecteur n'a rien à lire en DLNA »** (ou rien à mettre en pause, à arrêter, pas de piste
+  suivante) : le lecteur n'a aucun média DLNA chargé, et joue peut-être une autre source (Spotify,
+  AirPlay, une entrée HDMI…). Lancez un média depuis Gladys, ou utilisez l'application de cette
+  source. Stop est tout de même envoyé, car certains appareils arrêtent aussi l'autre source. Les
+  logs de l'intégration gardent le code UPnP répondu par le lecteur (par exemple
+  `Play failed: 701 Transition not available`).
+- **Un autre refus** se lit en clair (format refusé, média injoignable, lecteur en veille ou
+  occupé…) ; son code UPnP est dans les logs de l'intégration. Le message suit la langue de la
+  configuration, sauf sur les boutons du widget pour « rien en DLNA », affiché dans la langue de
+  l'utilisateur.
 - **Un fichier ou une radio ne se lit pas** : le lecteur doit accepter son format et joindre son
   URL lui-même. Un lecteur en veille peut mettre une dizaine de secondes à démarrer : l'intégration
   l'attend.

@@ -34,6 +34,7 @@ const renderers = new RendererManager({
   publisher,
   onDisplayChange: () => refreshWidgets(gladys, widgets),
   onUnreachable: () => relocate(),
+  language: () => config.language,
 });
 const context = { gladys, registry, renderers };
 widgets = createWidgets(context);
