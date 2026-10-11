@@ -11,9 +11,13 @@ A [Gladys Assistant](https://gladysassistant.com) external integration for **DLN
   searched with `ContentDirectory` (`Browse`, and `Search` when the server has it).
 - **Scenes**: "Play a media server on a DLNA renderer" (search by title, artist, album or folder;
   everything in order, shuffled, or the first result) and "Play a URL on a DLNA renderer" (web radio,
-  sound, announcement). Triggers: playback **started**, **paused**, **stopped**, filterable by
-  renderer, with the title, artist and album as variables.
-- **Dashboard**: a "DLNA player" widget (title, state, live volume, play/pause, stop, volume steps).
+  sound, announcement; a web radio is named after its ICY `icy-name` header when no title is
+  given), and "Play a DLNA favorite". Triggers: playback **started**, **paused**, **stopped**,
+  filterable by renderer, with the title, artist and album as variables.
+- **Favorites**: up to 8 web radios, files or media server searches, named in the configuration.
+- **Dashboard**: a "DLNA player" widget (title, state, live volume, play/pause, stop, volume steps)
+  and a "DLNA favorites" widget (four favorites per widget, and the one playing).
+- Texts in English, French, German and Spanish, the languages of Gladys.
 
 User documentation: [English](docs/en.md) · [Français](docs/fr.md).
 
@@ -34,8 +38,8 @@ maker._
 1. In Gladys, open **Integrations**, find **DLNA** and install it.
 2. Open the **Discovery** tab: renderers and servers of the network are listed. Add the ones you
    want.
-3. Optional: in **Configuration**, pick the language of the feature names before adding devices,
-   and add description URLs for devices SSDP cannot reach.
+3. Optional: in **Configuration**, pick the language of the feature names and messages before
+   adding devices, add description URLs for devices SSDP cannot reach, and fill your favorites.
 
 ## How it works
 

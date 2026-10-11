@@ -17,6 +17,7 @@ import { buildDiscoveredDevices, discover } from './src/discovery.js';
 import { createActions } from './src/actions.js';
 import { createSceneActions } from './src/scenes.js';
 import { createWidgets, refreshWidgets } from './src/widgets.js';
+import { MESSAGES } from './src/messages.js';
 
 // A renderer that went silent may have moved (DHCP, a new port after a
 // reboot): a background scan relocates it, at most this often.
@@ -36,7 +37,13 @@ const renderers = new RendererManager({
   onUnreachable: () => relocate(),
   language: () => config.language,
 });
-const context = { gladys, registry, renderers };
+const context = {
+  gladys,
+  registry,
+  renderers,
+  config: () => config,
+  language: () => config.language,
+};
 widgets = createWidgets(context);
 
 // --- Discovery -----------------------------------------------------------------
@@ -125,6 +132,8 @@ for (const [key, widget] of Object.entries(widgets)) {
 gladys.onConfigUpdated(async (newConfig) => {
   logger.info('onConfigUpdated -> new configuration received');
   config = normalizeConfig(newConfig);
+  // The favorites widgets show the names of the configuration.
+  refreshWidgets(gladys, widgets);
   await runDiscovery();
 });
 
@@ -140,12 +149,7 @@ gladys.on('connected', async () => {
     runDiscovery().catch((err) => logger.warn('Startup discovery failed', err));
   } catch (err) {
     logger.error('Post-connection initialization failed', err);
-    await gladys
-      .setConnectionStatus(false, {
-        en: 'Initialization failed, check the integration logs.',
-        fr: "L'initialisation a échoué, consultez les logs de l'intégration.",
-      })
-      .catch(() => {});
+    await gladys.setConnectionStatus(false, MESSAGES.INIT_FAILED).catch(() => {});
   }
 });
 

@@ -4,7 +4,9 @@
   "name": "DLNA",
   "description": {
     "en": "Control DLNA/UPnP renderers (TV, amp, speaker) and play your media servers, 100% local.",
-    "fr": "Pilotez vos lecteurs DLNA/UPnP (TV, ampli, enceinte) et vos serveurs multimédias, 100 % local."
+    "fr": "Pilotez vos lecteurs DLNA/UPnP (TV, ampli, enceinte) et vos serveurs multimédias, 100 % local.",
+    "de": "DLNA/UPnP-Geräte (TV, Verstärker, Lautsprecher) steuern und Medienserver abspielen, 100 % lokal.",
+    "es": "Controle sus reproductores DLNA/UPnP (TV, amplificador, altavoz) y sus servidores, 100 % local."
   },
   "version": "1.0.4",
   "docker_image": "ghcr.io/guim31/gladys-dlna:1.0.4",
@@ -12,28 +14,49 @@
   "cover_image": "https://raw.githubusercontent.com/guim31/gladys-dlna/main/cover.png",
   "categories": ["multimedia"],
   "transports": ["local"],
-  "network_discovery": [{ "type": "ssdp", "st": "upnp:rootdevice" }],
+  "network_discovery": [
+    {
+      "type": "ssdp",
+      "st": "upnp:rootdevice"
+    }
+  ],
   "config_schema": [
     {
       "key": "intro",
       "type": "section",
-      "label": { "en": "Finding your devices", "fr": "Trouver vos appareils" },
+      "label": {
+        "en": "Finding your devices",
+        "fr": "Trouver vos appareils",
+        "de": "Deine Geräte finden",
+        "es": "Encontrar sus dispositivos"
+      },
       "description": {
         "en": "Renderers and media servers of your network are found automatically: open the Discovery tab and add the ones you want. A device on another network (VLAN, other subnet) can be added by the URL of its UPnP description below.",
-        "fr": "Les lecteurs et serveurs multimédias de votre réseau sont trouvés automatiquement : ouvrez l'onglet Découverte et ajoutez ceux que vous voulez. Un appareil d'un autre réseau (VLAN, autre sous-réseau) s'ajoute ci-dessous par l'URL de sa description UPnP."
+        "fr": "Les lecteurs et serveurs multimédias de votre réseau sont trouvés automatiquement : ouvrez l'onglet Découverte et ajoutez ceux que vous voulez. Un appareil d'un autre réseau (VLAN, autre sous-réseau) s'ajoute ci-dessous par l'URL de sa description UPnP.",
+        "de": "Wiedergabegeräte und Medienserver in deinem Netzwerk werden automatisch gefunden: Öffne den Tab „Entdecken“ und füge die gewünschten hinzu. Ein Gerät in einem anderen Netzwerk (VLAN, anderes Subnetz) lässt sich unten über die URL seiner UPnP-Beschreibung hinzufügen.",
+        "es": "Los reproductores y servidores multimedia de su red se encuentran automáticamente: abra la pestaña Descubrir y añada los que quiera. Un dispositivo de otra red (VLAN, otra subred) se añade abajo mediante la URL de su descripción UPnP."
       }
     },
     {
       "key": "description_urls",
       "type": "string",
-      "label": { "en": "Description URLs (optional)", "fr": "URL de description (facultatif)" },
+      "label": {
+        "en": "Description URLs (optional)",
+        "fr": "URL de description (facultatif)",
+        "de": "Beschreibungs-URLs (optional)",
+        "es": "URL de descripción (opcional)"
+      },
       "description": {
         "en": "One or several UPnP description URLs, separated by commas. Use the action below to test one first.",
-        "fr": "Une ou plusieurs URL de description UPnP, séparées par des virgules. Testez-en une d'abord avec l'action ci-dessous."
+        "fr": "Une ou plusieurs URL de description UPnP, séparées par des virgules. Testez-en une d'abord avec l'action ci-dessous.",
+        "de": "Eine oder mehrere URLs von UPnP-Beschreibungen, durch Kommas getrennt. Teste zuerst eine mit der Aktion unten.",
+        "es": "Una o varias URL de descripción UPnP, separadas por comas. Pruebe primero una con la acción de abajo."
       },
       "placeholder": {
         "en": "http://192.168.1.20:8200/rootDesc.xml",
-        "fr": "http://192.168.1.20:8200/rootDesc.xml"
+        "fr": "http://192.168.1.20:8200/rootDesc.xml",
+        "de": "http://192.168.1.20:8200/rootDesc.xml",
+        "es": "http://192.168.1.20:8200/rootDesc.xml"
       },
       "required": false
     },
@@ -41,34 +64,1572 @@
       "key": "language",
       "type": "select",
       "label": {
-        "en": "Language of the feature names",
-        "fr": "Langue des noms de fonctionnalités"
+        "en": "Language of names and messages",
+        "fr": "Langue des noms et des messages",
+        "de": "Sprache der Namen und Meldungen",
+        "es": "Idioma de los nombres y mensajes"
       },
       "description": {
-        "en": "Used for the devices added from now on: Gladys keeps the names of a device once added.",
-        "fr": "Utilisée pour les appareils ajoutés désormais : Gladys garde les noms d'un appareil une fois ajouté."
+        "en": "Names of the features of the devices added from now on (Gladys keeps them once a device is added), and error messages of commands and scenes.",
+        "fr": "Noms des fonctionnalités des appareils ajoutés désormais (Gladys les garde une fois l'appareil ajouté), et messages d'erreur des commandes et des scènes.",
+        "de": "Namen der Funktionen der ab jetzt hinzugefügten Geräte (Gladys behält sie, sobald ein Gerät hinzugefügt ist) und Fehlermeldungen von Befehlen und Szenen.",
+        "es": "Nombres de las funciones de los dispositivos añadidos a partir de ahora (Gladys los conserva una vez añadido el dispositivo) y mensajes de error de comandos y escenas."
       },
       "required": false,
       "default": "en",
       "options": [
-        { "value": "en", "label": { "en": "English", "fr": "Anglais" } },
-        { "value": "fr", "label": { "en": "French", "fr": "Français" } }
+        {
+          "value": "en",
+          "label": {
+            "en": "English",
+            "fr": "Anglais",
+            "de": "Englisch",
+            "es": "Inglés"
+          }
+        },
+        {
+          "value": "fr",
+          "label": {
+            "en": "French",
+            "fr": "Français",
+            "de": "Französisch",
+            "es": "Francés"
+          }
+        },
+        {
+          "value": "de",
+          "label": {
+            "en": "German",
+            "fr": "Allemand",
+            "de": "Deutsch",
+            "es": "Alemán"
+          }
+        },
+        {
+          "value": "es",
+          "label": {
+            "en": "Spanish",
+            "fr": "Espagnol",
+            "de": "Spanisch",
+            "es": "Español"
+          }
+        }
+      ]
+    },
+    {
+      "key": "favorites",
+      "type": "section",
+      "label": {
+        "en": "Favorites",
+        "fr": "Favoris",
+        "de": "Favoriten",
+        "es": "Favoritos"
+      },
+      "description": {
+        "en": "Up to 8 media to play in one tap from the \"DLNA favorites\" widget or the \"Play a DLNA favorite\" scene action. Each favorite is a URL (web radio, file) or a search on a media server: fill one or the other. A favorite with neither is ignored.",
+        "fr": "Jusqu'à 8 médias à lancer d'un geste depuis le widget « Favoris DLNA » ou l'action de scène « Lire un favori DLNA ». Chaque favori est une URL (radio web, fichier) ou une recherche sur un serveur multimédia : remplissez l'une ou l'autre. Un favori sans l'une ni l'autre est ignoré.",
+        "de": "Bis zu 8 Medien, die sich mit einem Tipp über das Widget „DLNA-Favoriten“ oder die Szenenaktion „DLNA-Favorit abspielen“ starten lassen. Jeder Favorit ist eine URL (Webradio, Datei) oder eine Suche auf einem Medienserver: Fülle das eine oder das andere aus. Ein Favorit ohne beides wird ignoriert.",
+        "es": "Hasta 8 medios para iniciar con un toque desde el widget «Favoritos DLNA» o la acción de escena «Reproducir un favorito DLNA». Cada favorito es una URL (radio web, archivo) o una búsqueda en un servidor multimedia: rellene una u otra. Un favorito sin ninguna de las dos se ignora."
+      }
+    },
+    {
+      "key": "favorite_1",
+      "type": "section",
+      "label": {
+        "en": "Favorite 1",
+        "fr": "Favori 1",
+        "de": "Favorit 1",
+        "es": "Favorito 1"
+      }
+    },
+    {
+      "key": "favorite_1_name",
+      "type": "string",
+      "label": {
+        "en": "Name (shown on the button)",
+        "fr": "Nom (affiché sur le bouton)",
+        "de": "Name (auf der Schaltfläche)",
+        "es": "Nombre (en el botón)"
+      },
+      "placeholder": {
+        "en": "Jazz radio",
+        "fr": "Radio jazz",
+        "de": "Jazzradio",
+        "es": "Radio de jazz"
+      },
+      "required": false
+    },
+    {
+      "key": "favorite_1_url",
+      "type": "string",
+      "label": {
+        "en": "URL (web radio, file)",
+        "fr": "URL (radio web, fichier)",
+        "de": "URL (Webradio, Datei)",
+        "es": "URL (radio web, archivo)"
+      },
+      "placeholder": {
+        "en": "https://icecast.radiofrance.fr/fipjazz-hifi.aac",
+        "fr": "https://icecast.radiofrance.fr/fipjazz-hifi.aac",
+        "de": "https://icecast.radiofrance.fr/fipjazz-hifi.aac",
+        "es": "https://icecast.radiofrance.fr/fipjazz-hifi.aac"
+      },
+      "required": false
+    },
+    {
+      "key": "favorite_1_server",
+      "type": "string",
+      "label": {
+        "en": "Or a media server (its name in Gladys)",
+        "fr": "Ou un serveur multimédia (son nom dans Gladys)",
+        "de": "Oder ein Medienserver (sein Name in Gladys)",
+        "es": "O un servidor multimedia (su nombre en Gladys)"
+      },
+      "description": {
+        "en": "Empty: the only media server added to Gladys.",
+        "fr": "Vide : le seul serveur multimédia ajouté à Gladys.",
+        "de": "Leer: der einzige in Gladys hinzugefügte Medienserver.",
+        "es": "Vacío: el único servidor multimedia añadido a Gladys."
+      },
+      "placeholder": {
+        "en": "MiniDLNA",
+        "fr": "MiniDLNA",
+        "de": "MiniDLNA",
+        "es": "MiniDLNA"
+      },
+      "required": false
+    },
+    {
+      "key": "favorite_1_search_by",
+      "type": "select",
+      "label": {
+        "en": "Search by",
+        "fr": "Chercher par",
+        "de": "Suchen nach",
+        "es": "Buscar por"
+      },
+      "required": false,
+      "default": "any",
+      "options": [
+        {
+          "value": "any",
+          "label": {
+            "en": "Anything",
+            "fr": "Tout",
+            "de": "Alles",
+            "es": "Todo"
+          }
+        },
+        {
+          "value": "title",
+          "label": {
+            "en": "Title",
+            "fr": "Titre",
+            "de": "Titel",
+            "es": "Título"
+          }
+        },
+        {
+          "value": "artist",
+          "label": {
+            "en": "Artist",
+            "fr": "Artiste",
+            "de": "Interpret",
+            "es": "Artista"
+          }
+        },
+        {
+          "value": "album",
+          "label": {
+            "en": "Album",
+            "fr": "Album",
+            "de": "Album",
+            "es": "Álbum"
+          }
+        },
+        {
+          "value": "folder",
+          "label": {
+            "en": "Folder or playlist (name or path)",
+            "fr": "Dossier ou playlist (nom ou chemin)",
+            "de": "Ordner oder Playlist (Name oder Pfad)",
+            "es": "Carpeta o lista (nombre o ruta)"
+          }
+        }
+      ]
+    },
+    {
+      "key": "favorite_1_query",
+      "type": "string",
+      "label": {
+        "en": "Search on the server",
+        "fr": "Recherche sur le serveur",
+        "de": "Suche auf dem Server",
+        "es": "Búsqueda en el servidor"
+      },
+      "placeholder": {
+        "en": "Abbey Road, or Music/Jazz",
+        "fr": "Abbey Road, ou Musique/Jazz",
+        "de": "Abbey Road oder Musik/Jazz",
+        "es": "Abbey Road, o Música/Jazz"
+      },
+      "required": false
+    },
+    {
+      "key": "favorite_1_mode",
+      "type": "select",
+      "label": {
+        "en": "Play",
+        "fr": "Lecture",
+        "de": "Wiedergabe",
+        "es": "Reproducción"
+      },
+      "required": false,
+      "default": "all",
+      "options": [
+        {
+          "value": "all",
+          "label": {
+            "en": "Everything found, in order",
+            "fr": "Tout, dans l'ordre",
+            "de": "Alles Gefundene, der Reihe nach",
+            "es": "Todo lo encontrado, en orden"
+          }
+        },
+        {
+          "value": "shuffle",
+          "label": {
+            "en": "Everything found, shuffled",
+            "fr": "Tout, en aléatoire",
+            "de": "Alles Gefundene, zufällig",
+            "es": "Todo lo encontrado, aleatorio"
+          }
+        },
+        {
+          "value": "first",
+          "label": {
+            "en": "The first result only",
+            "fr": "Le premier résultat seulement",
+            "de": "Nur das erste Ergebnis",
+            "es": "Solo el primer resultado"
+          }
+        }
+      ]
+    },
+    {
+      "key": "favorite_2",
+      "type": "section",
+      "label": {
+        "en": "Favorite 2",
+        "fr": "Favori 2",
+        "de": "Favorit 2",
+        "es": "Favorito 2"
+      }
+    },
+    {
+      "key": "favorite_2_name",
+      "type": "string",
+      "label": {
+        "en": "Name (shown on the button)",
+        "fr": "Nom (affiché sur le bouton)",
+        "de": "Name (auf der Schaltfläche)",
+        "es": "Nombre (en el botón)"
+      },
+      "placeholder": {
+        "en": "Jazz radio",
+        "fr": "Radio jazz",
+        "de": "Jazzradio",
+        "es": "Radio de jazz"
+      },
+      "required": false
+    },
+    {
+      "key": "favorite_2_url",
+      "type": "string",
+      "label": {
+        "en": "URL (web radio, file)",
+        "fr": "URL (radio web, fichier)",
+        "de": "URL (Webradio, Datei)",
+        "es": "URL (radio web, archivo)"
+      },
+      "placeholder": {
+        "en": "https://icecast.radiofrance.fr/fipjazz-hifi.aac",
+        "fr": "https://icecast.radiofrance.fr/fipjazz-hifi.aac",
+        "de": "https://icecast.radiofrance.fr/fipjazz-hifi.aac",
+        "es": "https://icecast.radiofrance.fr/fipjazz-hifi.aac"
+      },
+      "required": false
+    },
+    {
+      "key": "favorite_2_server",
+      "type": "string",
+      "label": {
+        "en": "Or a media server (its name in Gladys)",
+        "fr": "Ou un serveur multimédia (son nom dans Gladys)",
+        "de": "Oder ein Medienserver (sein Name in Gladys)",
+        "es": "O un servidor multimedia (su nombre en Gladys)"
+      },
+      "description": {
+        "en": "Empty: the only media server added to Gladys.",
+        "fr": "Vide : le seul serveur multimédia ajouté à Gladys.",
+        "de": "Leer: der einzige in Gladys hinzugefügte Medienserver.",
+        "es": "Vacío: el único servidor multimedia añadido a Gladys."
+      },
+      "placeholder": {
+        "en": "MiniDLNA",
+        "fr": "MiniDLNA",
+        "de": "MiniDLNA",
+        "es": "MiniDLNA"
+      },
+      "required": false
+    },
+    {
+      "key": "favorite_2_search_by",
+      "type": "select",
+      "label": {
+        "en": "Search by",
+        "fr": "Chercher par",
+        "de": "Suchen nach",
+        "es": "Buscar por"
+      },
+      "required": false,
+      "default": "any",
+      "options": [
+        {
+          "value": "any",
+          "label": {
+            "en": "Anything",
+            "fr": "Tout",
+            "de": "Alles",
+            "es": "Todo"
+          }
+        },
+        {
+          "value": "title",
+          "label": {
+            "en": "Title",
+            "fr": "Titre",
+            "de": "Titel",
+            "es": "Título"
+          }
+        },
+        {
+          "value": "artist",
+          "label": {
+            "en": "Artist",
+            "fr": "Artiste",
+            "de": "Interpret",
+            "es": "Artista"
+          }
+        },
+        {
+          "value": "album",
+          "label": {
+            "en": "Album",
+            "fr": "Album",
+            "de": "Album",
+            "es": "Álbum"
+          }
+        },
+        {
+          "value": "folder",
+          "label": {
+            "en": "Folder or playlist (name or path)",
+            "fr": "Dossier ou playlist (nom ou chemin)",
+            "de": "Ordner oder Playlist (Name oder Pfad)",
+            "es": "Carpeta o lista (nombre o ruta)"
+          }
+        }
+      ]
+    },
+    {
+      "key": "favorite_2_query",
+      "type": "string",
+      "label": {
+        "en": "Search on the server",
+        "fr": "Recherche sur le serveur",
+        "de": "Suche auf dem Server",
+        "es": "Búsqueda en el servidor"
+      },
+      "placeholder": {
+        "en": "Abbey Road, or Music/Jazz",
+        "fr": "Abbey Road, ou Musique/Jazz",
+        "de": "Abbey Road oder Musik/Jazz",
+        "es": "Abbey Road, o Música/Jazz"
+      },
+      "required": false
+    },
+    {
+      "key": "favorite_2_mode",
+      "type": "select",
+      "label": {
+        "en": "Play",
+        "fr": "Lecture",
+        "de": "Wiedergabe",
+        "es": "Reproducción"
+      },
+      "required": false,
+      "default": "all",
+      "options": [
+        {
+          "value": "all",
+          "label": {
+            "en": "Everything found, in order",
+            "fr": "Tout, dans l'ordre",
+            "de": "Alles Gefundene, der Reihe nach",
+            "es": "Todo lo encontrado, en orden"
+          }
+        },
+        {
+          "value": "shuffle",
+          "label": {
+            "en": "Everything found, shuffled",
+            "fr": "Tout, en aléatoire",
+            "de": "Alles Gefundene, zufällig",
+            "es": "Todo lo encontrado, aleatorio"
+          }
+        },
+        {
+          "value": "first",
+          "label": {
+            "en": "The first result only",
+            "fr": "Le premier résultat seulement",
+            "de": "Nur das erste Ergebnis",
+            "es": "Solo el primer resultado"
+          }
+        }
+      ]
+    },
+    {
+      "key": "favorite_3",
+      "type": "section",
+      "label": {
+        "en": "Favorite 3",
+        "fr": "Favori 3",
+        "de": "Favorit 3",
+        "es": "Favorito 3"
+      }
+    },
+    {
+      "key": "favorite_3_name",
+      "type": "string",
+      "label": {
+        "en": "Name (shown on the button)",
+        "fr": "Nom (affiché sur le bouton)",
+        "de": "Name (auf der Schaltfläche)",
+        "es": "Nombre (en el botón)"
+      },
+      "placeholder": {
+        "en": "Jazz radio",
+        "fr": "Radio jazz",
+        "de": "Jazzradio",
+        "es": "Radio de jazz"
+      },
+      "required": false
+    },
+    {
+      "key": "favorite_3_url",
+      "type": "string",
+      "label": {
+        "en": "URL (web radio, file)",
+        "fr": "URL (radio web, fichier)",
+        "de": "URL (Webradio, Datei)",
+        "es": "URL (radio web, archivo)"
+      },
+      "placeholder": {
+        "en": "https://icecast.radiofrance.fr/fipjazz-hifi.aac",
+        "fr": "https://icecast.radiofrance.fr/fipjazz-hifi.aac",
+        "de": "https://icecast.radiofrance.fr/fipjazz-hifi.aac",
+        "es": "https://icecast.radiofrance.fr/fipjazz-hifi.aac"
+      },
+      "required": false
+    },
+    {
+      "key": "favorite_3_server",
+      "type": "string",
+      "label": {
+        "en": "Or a media server (its name in Gladys)",
+        "fr": "Ou un serveur multimédia (son nom dans Gladys)",
+        "de": "Oder ein Medienserver (sein Name in Gladys)",
+        "es": "O un servidor multimedia (su nombre en Gladys)"
+      },
+      "description": {
+        "en": "Empty: the only media server added to Gladys.",
+        "fr": "Vide : le seul serveur multimédia ajouté à Gladys.",
+        "de": "Leer: der einzige in Gladys hinzugefügte Medienserver.",
+        "es": "Vacío: el único servidor multimedia añadido a Gladys."
+      },
+      "placeholder": {
+        "en": "MiniDLNA",
+        "fr": "MiniDLNA",
+        "de": "MiniDLNA",
+        "es": "MiniDLNA"
+      },
+      "required": false
+    },
+    {
+      "key": "favorite_3_search_by",
+      "type": "select",
+      "label": {
+        "en": "Search by",
+        "fr": "Chercher par",
+        "de": "Suchen nach",
+        "es": "Buscar por"
+      },
+      "required": false,
+      "default": "any",
+      "options": [
+        {
+          "value": "any",
+          "label": {
+            "en": "Anything",
+            "fr": "Tout",
+            "de": "Alles",
+            "es": "Todo"
+          }
+        },
+        {
+          "value": "title",
+          "label": {
+            "en": "Title",
+            "fr": "Titre",
+            "de": "Titel",
+            "es": "Título"
+          }
+        },
+        {
+          "value": "artist",
+          "label": {
+            "en": "Artist",
+            "fr": "Artiste",
+            "de": "Interpret",
+            "es": "Artista"
+          }
+        },
+        {
+          "value": "album",
+          "label": {
+            "en": "Album",
+            "fr": "Album",
+            "de": "Album",
+            "es": "Álbum"
+          }
+        },
+        {
+          "value": "folder",
+          "label": {
+            "en": "Folder or playlist (name or path)",
+            "fr": "Dossier ou playlist (nom ou chemin)",
+            "de": "Ordner oder Playlist (Name oder Pfad)",
+            "es": "Carpeta o lista (nombre o ruta)"
+          }
+        }
+      ]
+    },
+    {
+      "key": "favorite_3_query",
+      "type": "string",
+      "label": {
+        "en": "Search on the server",
+        "fr": "Recherche sur le serveur",
+        "de": "Suche auf dem Server",
+        "es": "Búsqueda en el servidor"
+      },
+      "placeholder": {
+        "en": "Abbey Road, or Music/Jazz",
+        "fr": "Abbey Road, ou Musique/Jazz",
+        "de": "Abbey Road oder Musik/Jazz",
+        "es": "Abbey Road, o Música/Jazz"
+      },
+      "required": false
+    },
+    {
+      "key": "favorite_3_mode",
+      "type": "select",
+      "label": {
+        "en": "Play",
+        "fr": "Lecture",
+        "de": "Wiedergabe",
+        "es": "Reproducción"
+      },
+      "required": false,
+      "default": "all",
+      "options": [
+        {
+          "value": "all",
+          "label": {
+            "en": "Everything found, in order",
+            "fr": "Tout, dans l'ordre",
+            "de": "Alles Gefundene, der Reihe nach",
+            "es": "Todo lo encontrado, en orden"
+          }
+        },
+        {
+          "value": "shuffle",
+          "label": {
+            "en": "Everything found, shuffled",
+            "fr": "Tout, en aléatoire",
+            "de": "Alles Gefundene, zufällig",
+            "es": "Todo lo encontrado, aleatorio"
+          }
+        },
+        {
+          "value": "first",
+          "label": {
+            "en": "The first result only",
+            "fr": "Le premier résultat seulement",
+            "de": "Nur das erste Ergebnis",
+            "es": "Solo el primer resultado"
+          }
+        }
+      ]
+    },
+    {
+      "key": "favorite_4",
+      "type": "section",
+      "label": {
+        "en": "Favorite 4",
+        "fr": "Favori 4",
+        "de": "Favorit 4",
+        "es": "Favorito 4"
+      }
+    },
+    {
+      "key": "favorite_4_name",
+      "type": "string",
+      "label": {
+        "en": "Name (shown on the button)",
+        "fr": "Nom (affiché sur le bouton)",
+        "de": "Name (auf der Schaltfläche)",
+        "es": "Nombre (en el botón)"
+      },
+      "placeholder": {
+        "en": "Jazz radio",
+        "fr": "Radio jazz",
+        "de": "Jazzradio",
+        "es": "Radio de jazz"
+      },
+      "required": false
+    },
+    {
+      "key": "favorite_4_url",
+      "type": "string",
+      "label": {
+        "en": "URL (web radio, file)",
+        "fr": "URL (radio web, fichier)",
+        "de": "URL (Webradio, Datei)",
+        "es": "URL (radio web, archivo)"
+      },
+      "placeholder": {
+        "en": "https://icecast.radiofrance.fr/fipjazz-hifi.aac",
+        "fr": "https://icecast.radiofrance.fr/fipjazz-hifi.aac",
+        "de": "https://icecast.radiofrance.fr/fipjazz-hifi.aac",
+        "es": "https://icecast.radiofrance.fr/fipjazz-hifi.aac"
+      },
+      "required": false
+    },
+    {
+      "key": "favorite_4_server",
+      "type": "string",
+      "label": {
+        "en": "Or a media server (its name in Gladys)",
+        "fr": "Ou un serveur multimédia (son nom dans Gladys)",
+        "de": "Oder ein Medienserver (sein Name in Gladys)",
+        "es": "O un servidor multimedia (su nombre en Gladys)"
+      },
+      "description": {
+        "en": "Empty: the only media server added to Gladys.",
+        "fr": "Vide : le seul serveur multimédia ajouté à Gladys.",
+        "de": "Leer: der einzige in Gladys hinzugefügte Medienserver.",
+        "es": "Vacío: el único servidor multimedia añadido a Gladys."
+      },
+      "placeholder": {
+        "en": "MiniDLNA",
+        "fr": "MiniDLNA",
+        "de": "MiniDLNA",
+        "es": "MiniDLNA"
+      },
+      "required": false
+    },
+    {
+      "key": "favorite_4_search_by",
+      "type": "select",
+      "label": {
+        "en": "Search by",
+        "fr": "Chercher par",
+        "de": "Suchen nach",
+        "es": "Buscar por"
+      },
+      "required": false,
+      "default": "any",
+      "options": [
+        {
+          "value": "any",
+          "label": {
+            "en": "Anything",
+            "fr": "Tout",
+            "de": "Alles",
+            "es": "Todo"
+          }
+        },
+        {
+          "value": "title",
+          "label": {
+            "en": "Title",
+            "fr": "Titre",
+            "de": "Titel",
+            "es": "Título"
+          }
+        },
+        {
+          "value": "artist",
+          "label": {
+            "en": "Artist",
+            "fr": "Artiste",
+            "de": "Interpret",
+            "es": "Artista"
+          }
+        },
+        {
+          "value": "album",
+          "label": {
+            "en": "Album",
+            "fr": "Album",
+            "de": "Album",
+            "es": "Álbum"
+          }
+        },
+        {
+          "value": "folder",
+          "label": {
+            "en": "Folder or playlist (name or path)",
+            "fr": "Dossier ou playlist (nom ou chemin)",
+            "de": "Ordner oder Playlist (Name oder Pfad)",
+            "es": "Carpeta o lista (nombre o ruta)"
+          }
+        }
+      ]
+    },
+    {
+      "key": "favorite_4_query",
+      "type": "string",
+      "label": {
+        "en": "Search on the server",
+        "fr": "Recherche sur le serveur",
+        "de": "Suche auf dem Server",
+        "es": "Búsqueda en el servidor"
+      },
+      "placeholder": {
+        "en": "Abbey Road, or Music/Jazz",
+        "fr": "Abbey Road, ou Musique/Jazz",
+        "de": "Abbey Road oder Musik/Jazz",
+        "es": "Abbey Road, o Música/Jazz"
+      },
+      "required": false
+    },
+    {
+      "key": "favorite_4_mode",
+      "type": "select",
+      "label": {
+        "en": "Play",
+        "fr": "Lecture",
+        "de": "Wiedergabe",
+        "es": "Reproducción"
+      },
+      "required": false,
+      "default": "all",
+      "options": [
+        {
+          "value": "all",
+          "label": {
+            "en": "Everything found, in order",
+            "fr": "Tout, dans l'ordre",
+            "de": "Alles Gefundene, der Reihe nach",
+            "es": "Todo lo encontrado, en orden"
+          }
+        },
+        {
+          "value": "shuffle",
+          "label": {
+            "en": "Everything found, shuffled",
+            "fr": "Tout, en aléatoire",
+            "de": "Alles Gefundene, zufällig",
+            "es": "Todo lo encontrado, aleatorio"
+          }
+        },
+        {
+          "value": "first",
+          "label": {
+            "en": "The first result only",
+            "fr": "Le premier résultat seulement",
+            "de": "Nur das erste Ergebnis",
+            "es": "Solo el primer resultado"
+          }
+        }
+      ]
+    },
+    {
+      "key": "favorite_5",
+      "type": "section",
+      "label": {
+        "en": "Favorite 5",
+        "fr": "Favori 5",
+        "de": "Favorit 5",
+        "es": "Favorito 5"
+      }
+    },
+    {
+      "key": "favorite_5_name",
+      "type": "string",
+      "label": {
+        "en": "Name (shown on the button)",
+        "fr": "Nom (affiché sur le bouton)",
+        "de": "Name (auf der Schaltfläche)",
+        "es": "Nombre (en el botón)"
+      },
+      "placeholder": {
+        "en": "Jazz radio",
+        "fr": "Radio jazz",
+        "de": "Jazzradio",
+        "es": "Radio de jazz"
+      },
+      "required": false
+    },
+    {
+      "key": "favorite_5_url",
+      "type": "string",
+      "label": {
+        "en": "URL (web radio, file)",
+        "fr": "URL (radio web, fichier)",
+        "de": "URL (Webradio, Datei)",
+        "es": "URL (radio web, archivo)"
+      },
+      "placeholder": {
+        "en": "https://icecast.radiofrance.fr/fipjazz-hifi.aac",
+        "fr": "https://icecast.radiofrance.fr/fipjazz-hifi.aac",
+        "de": "https://icecast.radiofrance.fr/fipjazz-hifi.aac",
+        "es": "https://icecast.radiofrance.fr/fipjazz-hifi.aac"
+      },
+      "required": false
+    },
+    {
+      "key": "favorite_5_server",
+      "type": "string",
+      "label": {
+        "en": "Or a media server (its name in Gladys)",
+        "fr": "Ou un serveur multimédia (son nom dans Gladys)",
+        "de": "Oder ein Medienserver (sein Name in Gladys)",
+        "es": "O un servidor multimedia (su nombre en Gladys)"
+      },
+      "description": {
+        "en": "Empty: the only media server added to Gladys.",
+        "fr": "Vide : le seul serveur multimédia ajouté à Gladys.",
+        "de": "Leer: der einzige in Gladys hinzugefügte Medienserver.",
+        "es": "Vacío: el único servidor multimedia añadido a Gladys."
+      },
+      "placeholder": {
+        "en": "MiniDLNA",
+        "fr": "MiniDLNA",
+        "de": "MiniDLNA",
+        "es": "MiniDLNA"
+      },
+      "required": false
+    },
+    {
+      "key": "favorite_5_search_by",
+      "type": "select",
+      "label": {
+        "en": "Search by",
+        "fr": "Chercher par",
+        "de": "Suchen nach",
+        "es": "Buscar por"
+      },
+      "required": false,
+      "default": "any",
+      "options": [
+        {
+          "value": "any",
+          "label": {
+            "en": "Anything",
+            "fr": "Tout",
+            "de": "Alles",
+            "es": "Todo"
+          }
+        },
+        {
+          "value": "title",
+          "label": {
+            "en": "Title",
+            "fr": "Titre",
+            "de": "Titel",
+            "es": "Título"
+          }
+        },
+        {
+          "value": "artist",
+          "label": {
+            "en": "Artist",
+            "fr": "Artiste",
+            "de": "Interpret",
+            "es": "Artista"
+          }
+        },
+        {
+          "value": "album",
+          "label": {
+            "en": "Album",
+            "fr": "Album",
+            "de": "Album",
+            "es": "Álbum"
+          }
+        },
+        {
+          "value": "folder",
+          "label": {
+            "en": "Folder or playlist (name or path)",
+            "fr": "Dossier ou playlist (nom ou chemin)",
+            "de": "Ordner oder Playlist (Name oder Pfad)",
+            "es": "Carpeta o lista (nombre o ruta)"
+          }
+        }
+      ]
+    },
+    {
+      "key": "favorite_5_query",
+      "type": "string",
+      "label": {
+        "en": "Search on the server",
+        "fr": "Recherche sur le serveur",
+        "de": "Suche auf dem Server",
+        "es": "Búsqueda en el servidor"
+      },
+      "placeholder": {
+        "en": "Abbey Road, or Music/Jazz",
+        "fr": "Abbey Road, ou Musique/Jazz",
+        "de": "Abbey Road oder Musik/Jazz",
+        "es": "Abbey Road, o Música/Jazz"
+      },
+      "required": false
+    },
+    {
+      "key": "favorite_5_mode",
+      "type": "select",
+      "label": {
+        "en": "Play",
+        "fr": "Lecture",
+        "de": "Wiedergabe",
+        "es": "Reproducción"
+      },
+      "required": false,
+      "default": "all",
+      "options": [
+        {
+          "value": "all",
+          "label": {
+            "en": "Everything found, in order",
+            "fr": "Tout, dans l'ordre",
+            "de": "Alles Gefundene, der Reihe nach",
+            "es": "Todo lo encontrado, en orden"
+          }
+        },
+        {
+          "value": "shuffle",
+          "label": {
+            "en": "Everything found, shuffled",
+            "fr": "Tout, en aléatoire",
+            "de": "Alles Gefundene, zufällig",
+            "es": "Todo lo encontrado, aleatorio"
+          }
+        },
+        {
+          "value": "first",
+          "label": {
+            "en": "The first result only",
+            "fr": "Le premier résultat seulement",
+            "de": "Nur das erste Ergebnis",
+            "es": "Solo el primer resultado"
+          }
+        }
+      ]
+    },
+    {
+      "key": "favorite_6",
+      "type": "section",
+      "label": {
+        "en": "Favorite 6",
+        "fr": "Favori 6",
+        "de": "Favorit 6",
+        "es": "Favorito 6"
+      }
+    },
+    {
+      "key": "favorite_6_name",
+      "type": "string",
+      "label": {
+        "en": "Name (shown on the button)",
+        "fr": "Nom (affiché sur le bouton)",
+        "de": "Name (auf der Schaltfläche)",
+        "es": "Nombre (en el botón)"
+      },
+      "placeholder": {
+        "en": "Jazz radio",
+        "fr": "Radio jazz",
+        "de": "Jazzradio",
+        "es": "Radio de jazz"
+      },
+      "required": false
+    },
+    {
+      "key": "favorite_6_url",
+      "type": "string",
+      "label": {
+        "en": "URL (web radio, file)",
+        "fr": "URL (radio web, fichier)",
+        "de": "URL (Webradio, Datei)",
+        "es": "URL (radio web, archivo)"
+      },
+      "placeholder": {
+        "en": "https://icecast.radiofrance.fr/fipjazz-hifi.aac",
+        "fr": "https://icecast.radiofrance.fr/fipjazz-hifi.aac",
+        "de": "https://icecast.radiofrance.fr/fipjazz-hifi.aac",
+        "es": "https://icecast.radiofrance.fr/fipjazz-hifi.aac"
+      },
+      "required": false
+    },
+    {
+      "key": "favorite_6_server",
+      "type": "string",
+      "label": {
+        "en": "Or a media server (its name in Gladys)",
+        "fr": "Ou un serveur multimédia (son nom dans Gladys)",
+        "de": "Oder ein Medienserver (sein Name in Gladys)",
+        "es": "O un servidor multimedia (su nombre en Gladys)"
+      },
+      "description": {
+        "en": "Empty: the only media server added to Gladys.",
+        "fr": "Vide : le seul serveur multimédia ajouté à Gladys.",
+        "de": "Leer: der einzige in Gladys hinzugefügte Medienserver.",
+        "es": "Vacío: el único servidor multimedia añadido a Gladys."
+      },
+      "placeholder": {
+        "en": "MiniDLNA",
+        "fr": "MiniDLNA",
+        "de": "MiniDLNA",
+        "es": "MiniDLNA"
+      },
+      "required": false
+    },
+    {
+      "key": "favorite_6_search_by",
+      "type": "select",
+      "label": {
+        "en": "Search by",
+        "fr": "Chercher par",
+        "de": "Suchen nach",
+        "es": "Buscar por"
+      },
+      "required": false,
+      "default": "any",
+      "options": [
+        {
+          "value": "any",
+          "label": {
+            "en": "Anything",
+            "fr": "Tout",
+            "de": "Alles",
+            "es": "Todo"
+          }
+        },
+        {
+          "value": "title",
+          "label": {
+            "en": "Title",
+            "fr": "Titre",
+            "de": "Titel",
+            "es": "Título"
+          }
+        },
+        {
+          "value": "artist",
+          "label": {
+            "en": "Artist",
+            "fr": "Artiste",
+            "de": "Interpret",
+            "es": "Artista"
+          }
+        },
+        {
+          "value": "album",
+          "label": {
+            "en": "Album",
+            "fr": "Album",
+            "de": "Album",
+            "es": "Álbum"
+          }
+        },
+        {
+          "value": "folder",
+          "label": {
+            "en": "Folder or playlist (name or path)",
+            "fr": "Dossier ou playlist (nom ou chemin)",
+            "de": "Ordner oder Playlist (Name oder Pfad)",
+            "es": "Carpeta o lista (nombre o ruta)"
+          }
+        }
+      ]
+    },
+    {
+      "key": "favorite_6_query",
+      "type": "string",
+      "label": {
+        "en": "Search on the server",
+        "fr": "Recherche sur le serveur",
+        "de": "Suche auf dem Server",
+        "es": "Búsqueda en el servidor"
+      },
+      "placeholder": {
+        "en": "Abbey Road, or Music/Jazz",
+        "fr": "Abbey Road, ou Musique/Jazz",
+        "de": "Abbey Road oder Musik/Jazz",
+        "es": "Abbey Road, o Música/Jazz"
+      },
+      "required": false
+    },
+    {
+      "key": "favorite_6_mode",
+      "type": "select",
+      "label": {
+        "en": "Play",
+        "fr": "Lecture",
+        "de": "Wiedergabe",
+        "es": "Reproducción"
+      },
+      "required": false,
+      "default": "all",
+      "options": [
+        {
+          "value": "all",
+          "label": {
+            "en": "Everything found, in order",
+            "fr": "Tout, dans l'ordre",
+            "de": "Alles Gefundene, der Reihe nach",
+            "es": "Todo lo encontrado, en orden"
+          }
+        },
+        {
+          "value": "shuffle",
+          "label": {
+            "en": "Everything found, shuffled",
+            "fr": "Tout, en aléatoire",
+            "de": "Alles Gefundene, zufällig",
+            "es": "Todo lo encontrado, aleatorio"
+          }
+        },
+        {
+          "value": "first",
+          "label": {
+            "en": "The first result only",
+            "fr": "Le premier résultat seulement",
+            "de": "Nur das erste Ergebnis",
+            "es": "Solo el primer resultado"
+          }
+        }
+      ]
+    },
+    {
+      "key": "favorite_7",
+      "type": "section",
+      "label": {
+        "en": "Favorite 7",
+        "fr": "Favori 7",
+        "de": "Favorit 7",
+        "es": "Favorito 7"
+      }
+    },
+    {
+      "key": "favorite_7_name",
+      "type": "string",
+      "label": {
+        "en": "Name (shown on the button)",
+        "fr": "Nom (affiché sur le bouton)",
+        "de": "Name (auf der Schaltfläche)",
+        "es": "Nombre (en el botón)"
+      },
+      "placeholder": {
+        "en": "Jazz radio",
+        "fr": "Radio jazz",
+        "de": "Jazzradio",
+        "es": "Radio de jazz"
+      },
+      "required": false
+    },
+    {
+      "key": "favorite_7_url",
+      "type": "string",
+      "label": {
+        "en": "URL (web radio, file)",
+        "fr": "URL (radio web, fichier)",
+        "de": "URL (Webradio, Datei)",
+        "es": "URL (radio web, archivo)"
+      },
+      "placeholder": {
+        "en": "https://icecast.radiofrance.fr/fipjazz-hifi.aac",
+        "fr": "https://icecast.radiofrance.fr/fipjazz-hifi.aac",
+        "de": "https://icecast.radiofrance.fr/fipjazz-hifi.aac",
+        "es": "https://icecast.radiofrance.fr/fipjazz-hifi.aac"
+      },
+      "required": false
+    },
+    {
+      "key": "favorite_7_server",
+      "type": "string",
+      "label": {
+        "en": "Or a media server (its name in Gladys)",
+        "fr": "Ou un serveur multimédia (son nom dans Gladys)",
+        "de": "Oder ein Medienserver (sein Name in Gladys)",
+        "es": "O un servidor multimedia (su nombre en Gladys)"
+      },
+      "description": {
+        "en": "Empty: the only media server added to Gladys.",
+        "fr": "Vide : le seul serveur multimédia ajouté à Gladys.",
+        "de": "Leer: der einzige in Gladys hinzugefügte Medienserver.",
+        "es": "Vacío: el único servidor multimedia añadido a Gladys."
+      },
+      "placeholder": {
+        "en": "MiniDLNA",
+        "fr": "MiniDLNA",
+        "de": "MiniDLNA",
+        "es": "MiniDLNA"
+      },
+      "required": false
+    },
+    {
+      "key": "favorite_7_search_by",
+      "type": "select",
+      "label": {
+        "en": "Search by",
+        "fr": "Chercher par",
+        "de": "Suchen nach",
+        "es": "Buscar por"
+      },
+      "required": false,
+      "default": "any",
+      "options": [
+        {
+          "value": "any",
+          "label": {
+            "en": "Anything",
+            "fr": "Tout",
+            "de": "Alles",
+            "es": "Todo"
+          }
+        },
+        {
+          "value": "title",
+          "label": {
+            "en": "Title",
+            "fr": "Titre",
+            "de": "Titel",
+            "es": "Título"
+          }
+        },
+        {
+          "value": "artist",
+          "label": {
+            "en": "Artist",
+            "fr": "Artiste",
+            "de": "Interpret",
+            "es": "Artista"
+          }
+        },
+        {
+          "value": "album",
+          "label": {
+            "en": "Album",
+            "fr": "Album",
+            "de": "Album",
+            "es": "Álbum"
+          }
+        },
+        {
+          "value": "folder",
+          "label": {
+            "en": "Folder or playlist (name or path)",
+            "fr": "Dossier ou playlist (nom ou chemin)",
+            "de": "Ordner oder Playlist (Name oder Pfad)",
+            "es": "Carpeta o lista (nombre o ruta)"
+          }
+        }
+      ]
+    },
+    {
+      "key": "favorite_7_query",
+      "type": "string",
+      "label": {
+        "en": "Search on the server",
+        "fr": "Recherche sur le serveur",
+        "de": "Suche auf dem Server",
+        "es": "Búsqueda en el servidor"
+      },
+      "placeholder": {
+        "en": "Abbey Road, or Music/Jazz",
+        "fr": "Abbey Road, ou Musique/Jazz",
+        "de": "Abbey Road oder Musik/Jazz",
+        "es": "Abbey Road, o Música/Jazz"
+      },
+      "required": false
+    },
+    {
+      "key": "favorite_7_mode",
+      "type": "select",
+      "label": {
+        "en": "Play",
+        "fr": "Lecture",
+        "de": "Wiedergabe",
+        "es": "Reproducción"
+      },
+      "required": false,
+      "default": "all",
+      "options": [
+        {
+          "value": "all",
+          "label": {
+            "en": "Everything found, in order",
+            "fr": "Tout, dans l'ordre",
+            "de": "Alles Gefundene, der Reihe nach",
+            "es": "Todo lo encontrado, en orden"
+          }
+        },
+        {
+          "value": "shuffle",
+          "label": {
+            "en": "Everything found, shuffled",
+            "fr": "Tout, en aléatoire",
+            "de": "Alles Gefundene, zufällig",
+            "es": "Todo lo encontrado, aleatorio"
+          }
+        },
+        {
+          "value": "first",
+          "label": {
+            "en": "The first result only",
+            "fr": "Le premier résultat seulement",
+            "de": "Nur das erste Ergebnis",
+            "es": "Solo el primer resultado"
+          }
+        }
+      ]
+    },
+    {
+      "key": "favorite_8",
+      "type": "section",
+      "label": {
+        "en": "Favorite 8",
+        "fr": "Favori 8",
+        "de": "Favorit 8",
+        "es": "Favorito 8"
+      }
+    },
+    {
+      "key": "favorite_8_name",
+      "type": "string",
+      "label": {
+        "en": "Name (shown on the button)",
+        "fr": "Nom (affiché sur le bouton)",
+        "de": "Name (auf der Schaltfläche)",
+        "es": "Nombre (en el botón)"
+      },
+      "placeholder": {
+        "en": "Jazz radio",
+        "fr": "Radio jazz",
+        "de": "Jazzradio",
+        "es": "Radio de jazz"
+      },
+      "required": false
+    },
+    {
+      "key": "favorite_8_url",
+      "type": "string",
+      "label": {
+        "en": "URL (web radio, file)",
+        "fr": "URL (radio web, fichier)",
+        "de": "URL (Webradio, Datei)",
+        "es": "URL (radio web, archivo)"
+      },
+      "placeholder": {
+        "en": "https://icecast.radiofrance.fr/fipjazz-hifi.aac",
+        "fr": "https://icecast.radiofrance.fr/fipjazz-hifi.aac",
+        "de": "https://icecast.radiofrance.fr/fipjazz-hifi.aac",
+        "es": "https://icecast.radiofrance.fr/fipjazz-hifi.aac"
+      },
+      "required": false
+    },
+    {
+      "key": "favorite_8_server",
+      "type": "string",
+      "label": {
+        "en": "Or a media server (its name in Gladys)",
+        "fr": "Ou un serveur multimédia (son nom dans Gladys)",
+        "de": "Oder ein Medienserver (sein Name in Gladys)",
+        "es": "O un servidor multimedia (su nombre en Gladys)"
+      },
+      "description": {
+        "en": "Empty: the only media server added to Gladys.",
+        "fr": "Vide : le seul serveur multimédia ajouté à Gladys.",
+        "de": "Leer: der einzige in Gladys hinzugefügte Medienserver.",
+        "es": "Vacío: el único servidor multimedia añadido a Gladys."
+      },
+      "placeholder": {
+        "en": "MiniDLNA",
+        "fr": "MiniDLNA",
+        "de": "MiniDLNA",
+        "es": "MiniDLNA"
+      },
+      "required": false
+    },
+    {
+      "key": "favorite_8_search_by",
+      "type": "select",
+      "label": {
+        "en": "Search by",
+        "fr": "Chercher par",
+        "de": "Suchen nach",
+        "es": "Buscar por"
+      },
+      "required": false,
+      "default": "any",
+      "options": [
+        {
+          "value": "any",
+          "label": {
+            "en": "Anything",
+            "fr": "Tout",
+            "de": "Alles",
+            "es": "Todo"
+          }
+        },
+        {
+          "value": "title",
+          "label": {
+            "en": "Title",
+            "fr": "Titre",
+            "de": "Titel",
+            "es": "Título"
+          }
+        },
+        {
+          "value": "artist",
+          "label": {
+            "en": "Artist",
+            "fr": "Artiste",
+            "de": "Interpret",
+            "es": "Artista"
+          }
+        },
+        {
+          "value": "album",
+          "label": {
+            "en": "Album",
+            "fr": "Album",
+            "de": "Album",
+            "es": "Álbum"
+          }
+        },
+        {
+          "value": "folder",
+          "label": {
+            "en": "Folder or playlist (name or path)",
+            "fr": "Dossier ou playlist (nom ou chemin)",
+            "de": "Ordner oder Playlist (Name oder Pfad)",
+            "es": "Carpeta o lista (nombre o ruta)"
+          }
+        }
+      ]
+    },
+    {
+      "key": "favorite_8_query",
+      "type": "string",
+      "label": {
+        "en": "Search on the server",
+        "fr": "Recherche sur le serveur",
+        "de": "Suche auf dem Server",
+        "es": "Búsqueda en el servidor"
+      },
+      "placeholder": {
+        "en": "Abbey Road, or Music/Jazz",
+        "fr": "Abbey Road, ou Musique/Jazz",
+        "de": "Abbey Road oder Musik/Jazz",
+        "es": "Abbey Road, o Música/Jazz"
+      },
+      "required": false
+    },
+    {
+      "key": "favorite_8_mode",
+      "type": "select",
+      "label": {
+        "en": "Play",
+        "fr": "Lecture",
+        "de": "Wiedergabe",
+        "es": "Reproducción"
+      },
+      "required": false,
+      "default": "all",
+      "options": [
+        {
+          "value": "all",
+          "label": {
+            "en": "Everything found, in order",
+            "fr": "Tout, dans l'ordre",
+            "de": "Alles Gefundene, der Reihe nach",
+            "es": "Todo lo encontrado, en orden"
+          }
+        },
+        {
+          "value": "shuffle",
+          "label": {
+            "en": "Everything found, shuffled",
+            "fr": "Tout, en aléatoire",
+            "de": "Alles Gefundene, zufällig",
+            "es": "Todo lo encontrado, aleatorio"
+          }
+        },
+        {
+          "value": "first",
+          "label": {
+            "en": "The first result only",
+            "fr": "Le premier résultat seulement",
+            "de": "Nur das erste Ergebnis",
+            "es": "Solo el primer resultado"
+          }
+        }
       ]
     }
   ],
   "actions": [
     {
       "key": "test_description_url",
-      "label": { "en": "Test a description URL", "fr": "Tester une URL de description" },
+      "label": {
+        "en": "Test a description URL",
+        "fr": "Tester une URL de description",
+        "de": "Beschreibungs-URL testen",
+        "es": "Probar una URL de descripción"
+      },
       "timeout_seconds": 30,
       "fields": [
         {
           "key": "url",
           "type": "string",
-          "label": { "en": "Description URL", "fr": "URL de description" },
+          "label": {
+            "en": "Description URL",
+            "fr": "URL de description",
+            "de": "Beschreibungs-URL",
+            "es": "URL de descripción"
+          },
           "placeholder": {
             "en": "http://192.168.1.20:60006/upnp/desc/aios_device/aios_device.xml",
-            "fr": "http://192.168.1.20:60006/upnp/desc/aios_device/aios_device.xml"
+            "fr": "http://192.168.1.20:60006/upnp/desc/aios_device/aios_device.xml",
+            "de": "http://192.168.1.20:60006/upnp/desc/aios_device/aios_device.xml",
+            "es": "http://192.168.1.20:60006/upnp/desc/aios_device/aios_device.xml"
           },
           "required": true
         }
@@ -76,21 +1637,41 @@
     },
     {
       "key": "browse_server",
-      "label": { "en": "Browse a media server", "fr": "Parcourir un serveur multimédia" },
+      "label": {
+        "en": "Browse a media server",
+        "fr": "Parcourir un serveur multimédia",
+        "de": "Medienserver durchsuchen",
+        "es": "Explorar un servidor multimedia"
+      },
       "timeout_seconds": 60,
       "fields": [
         {
           "key": "server",
           "type": "select",
           "source": "devices",
-          "label": { "en": "Media server", "fr": "Serveur multimédia" },
+          "label": {
+            "en": "Media server",
+            "fr": "Serveur multimédia",
+            "de": "Medienserver",
+            "es": "Servidor multimedia"
+          },
           "required": true
         },
         {
           "key": "path",
           "type": "string",
-          "label": { "en": "Folder (empty: the root)", "fr": "Dossier (vide : la racine)" },
-          "placeholder": { "en": "Music/Albums", "fr": "Musique/Albums" },
+          "label": {
+            "en": "Folder (empty: the root)",
+            "fr": "Dossier (vide : la racine)",
+            "de": "Ordner (leer: das Stammverzeichnis)",
+            "es": "Carpeta (vacío: la raíz)"
+          },
+          "placeholder": {
+            "en": "Music/Albums",
+            "fr": "Musique/Albums",
+            "de": "Musik/Alben",
+            "es": "Música/Álbumes"
+          },
           "required": false
         }
       ]
@@ -99,68 +1680,212 @@
   "scene_triggers": [
     {
       "key": "playback_started",
-      "label": { "en": "DLNA playback started", "fr": "Lecture DLNA démarrée" },
+      "label": {
+        "en": "DLNA playback started",
+        "fr": "Lecture DLNA démarrée",
+        "de": "DLNA-Wiedergabe gestartet",
+        "es": "Reproducción DLNA iniciada"
+      },
       "description": {
         "en": "A DLNA renderer started or resumed playing.",
-        "fr": "Un lecteur DLNA a démarré ou repris la lecture."
+        "fr": "Un lecteur DLNA a démarré ou repris la lecture.",
+        "de": "Ein DLNA-Wiedergabegerät hat die Wiedergabe gestartet oder fortgesetzt.",
+        "es": "Un reproductor DLNA ha iniciado o reanudado la reproducción."
       },
       "fields": [
         {
           "key": "device",
           "type": "select",
           "source": "devices",
-          "label": { "en": "Renderer (empty: any)", "fr": "Lecteur (vide : n'importe lequel)" }
+          "label": {
+            "en": "Renderer (empty: any)",
+            "fr": "Lecteur (vide : n'importe lequel)",
+            "de": "Wiedergabegerät (leer: beliebig)",
+            "es": "Reproductor (vacío: cualquiera)"
+          }
         }
       ],
       "variables": [
-        { "key": "renderer", "type": "string", "label": { "en": "Renderer", "fr": "Lecteur" } },
-        { "key": "title", "type": "string", "label": { "en": "Title", "fr": "Titre" } },
-        { "key": "artist", "type": "string", "label": { "en": "Artist", "fr": "Artiste" } },
-        { "key": "album", "type": "string", "label": { "en": "Album", "fr": "Album" } }
+        {
+          "key": "renderer",
+          "type": "string",
+          "label": {
+            "en": "Renderer",
+            "fr": "Lecteur",
+            "de": "Wiedergabegerät",
+            "es": "Reproductor"
+          }
+        },
+        {
+          "key": "title",
+          "type": "string",
+          "label": {
+            "en": "Title",
+            "fr": "Titre",
+            "de": "Titel",
+            "es": "Título"
+          }
+        },
+        {
+          "key": "artist",
+          "type": "string",
+          "label": {
+            "en": "Artist",
+            "fr": "Artiste",
+            "de": "Interpret",
+            "es": "Artista"
+          }
+        },
+        {
+          "key": "album",
+          "type": "string",
+          "label": {
+            "en": "Album",
+            "fr": "Album",
+            "de": "Album",
+            "es": "Álbum"
+          }
+        }
       ]
     },
     {
       "key": "playback_paused",
-      "label": { "en": "DLNA playback paused", "fr": "Lecture DLNA en pause" },
+      "label": {
+        "en": "DLNA playback paused",
+        "fr": "Lecture DLNA en pause",
+        "de": "DLNA-Wiedergabe pausiert",
+        "es": "Reproducción DLNA en pausa"
+      },
       "description": {
         "en": "A DLNA renderer paused its playback.",
-        "fr": "Un lecteur DLNA a mis sa lecture en pause."
+        "fr": "Un lecteur DLNA a mis sa lecture en pause.",
+        "de": "Ein DLNA-Wiedergabegerät hat die Wiedergabe pausiert.",
+        "es": "Un reproductor DLNA ha pausado su reproducción."
       },
       "fields": [
         {
           "key": "device",
           "type": "select",
           "source": "devices",
-          "label": { "en": "Renderer (empty: any)", "fr": "Lecteur (vide : n'importe lequel)" }
+          "label": {
+            "en": "Renderer (empty: any)",
+            "fr": "Lecteur (vide : n'importe lequel)",
+            "de": "Wiedergabegerät (leer: beliebig)",
+            "es": "Reproductor (vacío: cualquiera)"
+          }
         }
       ],
       "variables": [
-        { "key": "renderer", "type": "string", "label": { "en": "Renderer", "fr": "Lecteur" } },
-        { "key": "title", "type": "string", "label": { "en": "Title", "fr": "Titre" } },
-        { "key": "artist", "type": "string", "label": { "en": "Artist", "fr": "Artiste" } },
-        { "key": "album", "type": "string", "label": { "en": "Album", "fr": "Album" } }
+        {
+          "key": "renderer",
+          "type": "string",
+          "label": {
+            "en": "Renderer",
+            "fr": "Lecteur",
+            "de": "Wiedergabegerät",
+            "es": "Reproductor"
+          }
+        },
+        {
+          "key": "title",
+          "type": "string",
+          "label": {
+            "en": "Title",
+            "fr": "Titre",
+            "de": "Titel",
+            "es": "Título"
+          }
+        },
+        {
+          "key": "artist",
+          "type": "string",
+          "label": {
+            "en": "Artist",
+            "fr": "Artiste",
+            "de": "Interpret",
+            "es": "Artista"
+          }
+        },
+        {
+          "key": "album",
+          "type": "string",
+          "label": {
+            "en": "Album",
+            "fr": "Album",
+            "de": "Album",
+            "es": "Álbum"
+          }
+        }
       ]
     },
     {
       "key": "playback_stopped",
-      "label": { "en": "DLNA playback stopped", "fr": "Lecture DLNA arrêtée" },
+      "label": {
+        "en": "DLNA playback stopped",
+        "fr": "Lecture DLNA arrêtée",
+        "de": "DLNA-Wiedergabe gestoppt",
+        "es": "Reproducción DLNA detenida"
+      },
       "description": {
         "en": "A DLNA renderer stopped playing (end of the media, or stop).",
-        "fr": "Un lecteur DLNA a arrêté la lecture (fin du média, ou arrêt)."
+        "fr": "Un lecteur DLNA a arrêté la lecture (fin du média, ou arrêt).",
+        "de": "Ein DLNA-Wiedergabegerät hat die Wiedergabe beendet (Ende des Mediums oder Stopp).",
+        "es": "Un reproductor DLNA ha dejado de reproducir (fin del medio o parada)."
       },
       "fields": [
         {
           "key": "device",
           "type": "select",
           "source": "devices",
-          "label": { "en": "Renderer (empty: any)", "fr": "Lecteur (vide : n'importe lequel)" }
+          "label": {
+            "en": "Renderer (empty: any)",
+            "fr": "Lecteur (vide : n'importe lequel)",
+            "de": "Wiedergabegerät (leer: beliebig)",
+            "es": "Reproductor (vacío: cualquiera)"
+          }
         }
       ],
       "variables": [
-        { "key": "renderer", "type": "string", "label": { "en": "Renderer", "fr": "Lecteur" } },
-        { "key": "title", "type": "string", "label": { "en": "Title", "fr": "Titre" } },
-        { "key": "artist", "type": "string", "label": { "en": "Artist", "fr": "Artiste" } },
-        { "key": "album", "type": "string", "label": { "en": "Album", "fr": "Album" } }
+        {
+          "key": "renderer",
+          "type": "string",
+          "label": {
+            "en": "Renderer",
+            "fr": "Lecteur",
+            "de": "Wiedergabegerät",
+            "es": "Reproductor"
+          }
+        },
+        {
+          "key": "title",
+          "type": "string",
+          "label": {
+            "en": "Title",
+            "fr": "Titre",
+            "de": "Titel",
+            "es": "Título"
+          }
+        },
+        {
+          "key": "artist",
+          "type": "string",
+          "label": {
+            "en": "Artist",
+            "fr": "Artiste",
+            "de": "Interpret",
+            "es": "Artista"
+          }
+        },
+        {
+          "key": "album",
+          "type": "string",
+          "label": {
+            "en": "Album",
+            "fr": "Album",
+            "de": "Album",
+            "es": "Álbum"
+          }
+        }
       ]
     }
   ],
@@ -169,11 +1894,15 @@
       "key": "play_media",
       "label": {
         "en": "Play a media server on a DLNA renderer",
-        "fr": "Lire un serveur multimédia sur un lecteur DLNA"
+        "fr": "Lire un serveur multimédia sur un lecteur DLNA",
+        "de": "Medienserver auf einem DLNA-Gerät abspielen",
+        "es": "Reproducir un servidor multimedia en un reproductor DLNA"
       },
       "description": {
         "en": "Search a title, an artist, an album or a folder on a media server and play it.",
-        "fr": "Cherche un titre, un artiste, un album ou un dossier sur un serveur et le lit."
+        "fr": "Cherche un titre, un artiste, un album ou un dossier sur un serveur et le lit.",
+        "de": "Sucht einen Titel, einen Interpreten, ein Album oder einen Ordner auf einem Medienserver und spielt ihn ab.",
+        "es": "Busca un título, un artista, un álbum o una carpeta en un servidor multimedia y lo reproduce."
       },
       "timeout_seconds": 90,
       "fields": [
@@ -181,63 +1910,150 @@
           "key": "renderer",
           "type": "select",
           "source": "devices",
-          "label": { "en": "Renderer", "fr": "Lecteur" },
+          "label": {
+            "en": "Renderer",
+            "fr": "Lecteur",
+            "de": "Wiedergabegerät",
+            "es": "Reproductor"
+          },
           "required": true
         },
         {
           "key": "server",
           "type": "select",
           "source": "devices",
-          "label": { "en": "Media server", "fr": "Serveur multimédia" },
+          "label": {
+            "en": "Media server",
+            "fr": "Serveur multimédia",
+            "de": "Medienserver",
+            "es": "Servidor multimedia"
+          },
           "required": true
         },
         {
           "key": "search_by",
           "type": "select",
-          "label": { "en": "Search by", "fr": "Chercher par" },
+          "label": {
+            "en": "Search by",
+            "fr": "Chercher par",
+            "de": "Suchen nach",
+            "es": "Buscar por"
+          },
           "default": "any",
           "options": [
-            { "value": "any", "label": { "en": "Anything", "fr": "Tout" } },
-            { "value": "title", "label": { "en": "Title", "fr": "Titre" } },
-            { "value": "artist", "label": { "en": "Artist", "fr": "Artiste" } },
-            { "value": "album", "label": { "en": "Album", "fr": "Album" } },
+            {
+              "value": "any",
+              "label": {
+                "en": "Anything",
+                "fr": "Tout",
+                "de": "Alles",
+                "es": "Todo"
+              }
+            },
+            {
+              "value": "title",
+              "label": {
+                "en": "Title",
+                "fr": "Titre",
+                "de": "Titel",
+                "es": "Título"
+              }
+            },
+            {
+              "value": "artist",
+              "label": {
+                "en": "Artist",
+                "fr": "Artiste",
+                "de": "Interpret",
+                "es": "Artista"
+              }
+            },
+            {
+              "value": "album",
+              "label": {
+                "en": "Album",
+                "fr": "Album",
+                "de": "Album",
+                "es": "Álbum"
+              }
+            },
             {
               "value": "folder",
-              "label": { "en": "Folder (name or path)", "fr": "Dossier (nom ou chemin)" }
+              "label": {
+                "en": "Folder (name or path)",
+                "fr": "Dossier (nom ou chemin)",
+                "de": "Ordner (Name oder Pfad)",
+                "es": "Carpeta (nombre o ruta)"
+              }
             }
           ]
         },
         {
           "key": "query",
           "type": "string",
-          "label": { "en": "Search", "fr": "Recherche" },
-          "placeholder": { "en": "Abbey Road, or Music/Jazz", "fr": "Abbey Road, ou Musique/Jazz" },
+          "label": {
+            "en": "Search",
+            "fr": "Recherche",
+            "de": "Suche",
+            "es": "Búsqueda"
+          },
+          "placeholder": {
+            "en": "Abbey Road, or Music/Jazz",
+            "fr": "Abbey Road, ou Musique/Jazz",
+            "de": "Abbey Road oder Musik/Jazz",
+            "es": "Abbey Road, o Música/Jazz"
+          },
           "required": true
         },
         {
           "key": "mode",
           "type": "select",
-          "label": { "en": "Play", "fr": "Lecture" },
+          "label": {
+            "en": "Play",
+            "fr": "Lecture",
+            "de": "Wiedergabe",
+            "es": "Reproducción"
+          },
           "default": "all",
           "options": [
             {
               "value": "all",
-              "label": { "en": "Everything found, in order", "fr": "Tout, dans l'ordre" }
+              "label": {
+                "en": "Everything found, in order",
+                "fr": "Tout, dans l'ordre",
+                "de": "Alles Gefundene, der Reihe nach",
+                "es": "Todo lo encontrado, en orden"
+              }
             },
             {
               "value": "shuffle",
-              "label": { "en": "Everything found, shuffled", "fr": "Tout, en aléatoire" }
+              "label": {
+                "en": "Everything found, shuffled",
+                "fr": "Tout, en aléatoire",
+                "de": "Alles Gefundene, zufällig",
+                "es": "Todo lo encontrado, aleatorio"
+              }
             },
             {
               "value": "first",
-              "label": { "en": "The first result only", "fr": "Le premier résultat seulement" }
+              "label": {
+                "en": "The first result only",
+                "fr": "Le premier résultat seulement",
+                "de": "Nur das erste Ergebnis",
+                "es": "Solo el primer resultado"
+              }
             }
           ]
         },
         {
           "key": "volume",
           "type": "number",
-          "label": { "en": "Volume (optional, 0-100)", "fr": "Volume (facultatif, 0-100)" },
+          "label": {
+            "en": "Volume (optional, 0-100)",
+            "fr": "Volume (facultatif, 0-100)",
+            "de": "Lautstärke (optional, 0-100)",
+            "es": "Volumen (opcional, 0-100)"
+          },
           "min": 0,
           "max": 100
         }
@@ -246,26 +2062,48 @@
         {
           "key": "found",
           "type": "boolean",
-          "label": { "en": "Something found", "fr": "Résultat trouvé" }
+          "label": {
+            "en": "Something found",
+            "fr": "Résultat trouvé",
+            "de": "Etwas gefunden",
+            "es": "Algo encontrado"
+          }
         },
         {
           "key": "count",
           "type": "number",
-          "label": { "en": "Tracks queued", "fr": "Pistes en file" }
+          "label": {
+            "en": "Tracks queued",
+            "fr": "Pistes en file",
+            "de": "Titel in der Warteschlange",
+            "es": "Pistas en cola"
+          }
         },
         {
           "key": "title",
           "type": "string",
-          "label": { "en": "First title", "fr": "Premier titre" }
+          "label": {
+            "en": "First title",
+            "fr": "Premier titre",
+            "de": "Erster Titel",
+            "es": "Primer título"
+          }
         }
       ]
     },
     {
       "key": "play_url",
-      "label": { "en": "Play a URL on a DLNA renderer", "fr": "Lire une URL sur un lecteur DLNA" },
+      "label": {
+        "en": "Play a URL on a DLNA renderer",
+        "fr": "Lire une URL sur un lecteur DLNA",
+        "de": "URL auf einem DLNA-Gerät abspielen",
+        "es": "Reproducir una URL en un reproductor DLNA"
+      },
       "description": {
         "en": "A web radio, a sound or an announcement file, by its http(s) URL.",
-        "fr": "Une radio web, un son ou un fichier d'annonce, par son URL http(s)."
+        "fr": "Une radio web, un son ou un fichier d'annonce, par son URL http(s).",
+        "de": "Ein Webradio, ein Ton oder eine Ansagedatei, über die http(s)-URL.",
+        "es": "Una radio web, un sonido o un archivo de aviso, por su URL http(s)."
       },
       "timeout_seconds": 30,
       "fields": [
@@ -273,45 +2111,243 @@
           "key": "renderer",
           "type": "select",
           "source": "devices",
-          "label": { "en": "Renderer", "fr": "Lecteur" },
+          "label": {
+            "en": "Renderer",
+            "fr": "Lecteur",
+            "de": "Wiedergabegerät",
+            "es": "Reproductor"
+          },
           "required": true
         },
         {
           "key": "url",
           "type": "string",
-          "label": { "en": "URL", "fr": "URL" },
+          "label": {
+            "en": "URL",
+            "fr": "URL",
+            "de": "URL",
+            "es": "URL"
+          },
           "placeholder": {
             "en": "https://icecast.radiofrance.fr/fip-hifi.aac",
-            "fr": "https://icecast.radiofrance.fr/fip-hifi.aac"
+            "fr": "https://icecast.radiofrance.fr/fip-hifi.aac",
+            "de": "https://icecast.radiofrance.fr/fip-hifi.aac",
+            "es": "https://icecast.radiofrance.fr/fip-hifi.aac"
           },
           "required": true
         },
         {
           "key": "title",
           "type": "string",
-          "label": { "en": "Title shown (optional)", "fr": "Titre affiché (facultatif)" },
-          "placeholder": { "en": "FIP", "fr": "FIP" }
+          "label": {
+            "en": "Title shown (optional)",
+            "fr": "Titre affiché (facultatif)",
+            "de": "Angezeigter Titel (optional)",
+            "es": "Título mostrado (opcional)"
+          },
+          "description": {
+            "en": "Empty: the name the web radio gives, else the URL.",
+            "fr": "Vide : le nom que donne la radio web, sinon l'URL.",
+            "de": "Leer: der Name, den das Webradio angibt, sonst die URL.",
+            "es": "Vacío: el nombre que indica la radio web o, si no, la URL."
+          },
+          "placeholder": {
+            "en": "FIP",
+            "fr": "FIP",
+            "de": "FIP",
+            "es": "FIP"
+          }
         },
         {
           "key": "volume",
           "type": "number",
-          "label": { "en": "Volume (optional, 0-100)", "fr": "Volume (facultatif, 0-100)" },
+          "label": {
+            "en": "Volume (optional, 0-100)",
+            "fr": "Volume (facultatif, 0-100)",
+            "de": "Lautstärke (optional, 0-100)",
+            "es": "Volumen (opcional, 0-100)"
+          },
           "min": 0,
           "max": 100
         }
       ],
       "outputs": [
-        { "key": "started", "type": "boolean", "label": { "en": "Started", "fr": "Démarrée" } }
+        {
+          "key": "started",
+          "type": "boolean",
+          "label": {
+            "en": "Started",
+            "fr": "Démarrée",
+            "de": "Gestartet",
+            "es": "Iniciada"
+          }
+        }
+      ]
+    },
+    {
+      "key": "play_favorite",
+      "label": {
+        "en": "Play a DLNA favorite",
+        "fr": "Lire un favori DLNA",
+        "de": "DLNA-Favorit abspielen",
+        "es": "Reproducir un favorito DLNA"
+      },
+      "description": {
+        "en": "Play one of the favorites of the DLNA configuration on a renderer.",
+        "fr": "Lit sur un lecteur l'un des favoris de la configuration DLNA.",
+        "de": "Spielt einen der Favoriten aus der DLNA-Konfiguration auf einem Wiedergabegerät ab.",
+        "es": "Reproduce en un reproductor uno de los favoritos de la configuración DLNA."
+      },
+      "timeout_seconds": 90,
+      "fields": [
+        {
+          "key": "renderer",
+          "type": "select",
+          "source": "devices",
+          "label": {
+            "en": "Renderer",
+            "fr": "Lecteur",
+            "de": "Wiedergabegerät",
+            "es": "Reproductor"
+          },
+          "required": true
+        },
+        {
+          "key": "favorite",
+          "type": "select",
+          "label": {
+            "en": "Favorite",
+            "fr": "Favori",
+            "de": "Favorit",
+            "es": "Favorito"
+          },
+          "required": true,
+          "options": [
+            {
+              "value": "1",
+              "label": {
+                "en": "Favorite 1",
+                "fr": "Favori 1",
+                "de": "Favorit 1",
+                "es": "Favorito 1"
+              }
+            },
+            {
+              "value": "2",
+              "label": {
+                "en": "Favorite 2",
+                "fr": "Favori 2",
+                "de": "Favorit 2",
+                "es": "Favorito 2"
+              }
+            },
+            {
+              "value": "3",
+              "label": {
+                "en": "Favorite 3",
+                "fr": "Favori 3",
+                "de": "Favorit 3",
+                "es": "Favorito 3"
+              }
+            },
+            {
+              "value": "4",
+              "label": {
+                "en": "Favorite 4",
+                "fr": "Favori 4",
+                "de": "Favorit 4",
+                "es": "Favorito 4"
+              }
+            },
+            {
+              "value": "5",
+              "label": {
+                "en": "Favorite 5",
+                "fr": "Favori 5",
+                "de": "Favorit 5",
+                "es": "Favorito 5"
+              }
+            },
+            {
+              "value": "6",
+              "label": {
+                "en": "Favorite 6",
+                "fr": "Favori 6",
+                "de": "Favorit 6",
+                "es": "Favorito 6"
+              }
+            },
+            {
+              "value": "7",
+              "label": {
+                "en": "Favorite 7",
+                "fr": "Favori 7",
+                "de": "Favorit 7",
+                "es": "Favorito 7"
+              }
+            },
+            {
+              "value": "8",
+              "label": {
+                "en": "Favorite 8",
+                "fr": "Favori 8",
+                "de": "Favorit 8",
+                "es": "Favorito 8"
+              }
+            }
+          ]
+        },
+        {
+          "key": "volume",
+          "type": "number",
+          "label": {
+            "en": "Volume (optional, 0-100)",
+            "fr": "Volume (facultatif, 0-100)",
+            "de": "Lautstärke (optional, 0-100)",
+            "es": "Volumen (opcional, 0-100)"
+          },
+          "min": 0,
+          "max": 100
+        }
+      ],
+      "outputs": [
+        {
+          "key": "started",
+          "type": "boolean",
+          "label": {
+            "en": "Started",
+            "fr": "Démarrée",
+            "de": "Gestartet",
+            "es": "Iniciada"
+          }
+        },
+        {
+          "key": "name",
+          "type": "string",
+          "label": {
+            "en": "Favorite name",
+            "fr": "Nom du favori",
+            "de": "Name des Favoriten",
+            "es": "Nombre del favorito"
+          }
+        }
       ]
     }
   ],
   "widgets": [
     {
       "key": "player",
-      "label": { "en": "DLNA player", "fr": "Lecteur DLNA" },
+      "label": {
+        "en": "DLNA player",
+        "fr": "Lecteur DLNA",
+        "de": "DLNA-Player",
+        "es": "Reproductor DLNA"
+      },
       "description": {
         "en": "What a DLNA renderer plays, its state, volume, play, pause and stop.",
-        "fr": "Ce que joue un lecteur DLNA, son état, son volume, lecture, pause et stop."
+        "fr": "Ce que joue un lecteur DLNA, son état, son volume, lecture, pause et stop.",
+        "de": "Was ein DLNA-Gerät spielt, sein Status, Lautstärke, Wiedergabe, Pause und Stopp.",
+        "es": "Lo que reproduce un reproductor DLNA, su estado, volumen, reproducir, pausa y detener."
       },
       "icon": "music",
       "settings": [
@@ -319,11 +2355,138 @@
           "key": "device",
           "type": "select",
           "source": "devices",
-          "label": { "en": "Renderer", "fr": "Lecteur" },
+          "label": {
+            "en": "Renderer",
+            "fr": "Lecteur",
+            "de": "Wiedergabegerät",
+            "es": "Reproductor"
+          },
           "required": true
         }
       ],
       "action_timeout_seconds": 15
+    },
+    {
+      "key": "favorites",
+      "label": {
+        "en": "DLNA favorites",
+        "fr": "Favoris DLNA",
+        "de": "DLNA-Favoriten",
+        "es": "Favoritos DLNA"
+      },
+      "description": {
+        "en": "Your favorite web radios and media in one tap, on a DLNA renderer.",
+        "fr": "Vos radios web et médias favoris d'un geste, sur un lecteur DLNA.",
+        "de": "Deine Lieblings-Webradios und -Medien mit einem Tipp auf einem DLNA-Gerät.",
+        "es": "Sus radios web y medios favoritos con un toque, en un reproductor DLNA."
+      },
+      "icon": "star",
+      "settings": [
+        {
+          "key": "device",
+          "type": "select",
+          "source": "devices",
+          "label": {
+            "en": "Renderer",
+            "fr": "Lecteur",
+            "de": "Wiedergabegerät",
+            "es": "Reproductor"
+          },
+          "required": true
+        },
+        {
+          "key": "favorites",
+          "type": "multi_select",
+          "label": {
+            "en": "Favorites shown (4 at most)",
+            "fr": "Favoris affichés (4 au plus)",
+            "de": "Angezeigte Favoriten (höchstens 4)",
+            "es": "Favoritos mostrados (4 como máximo)"
+          },
+          "description": {
+            "en": "Empty: the first four configured.",
+            "fr": "Vide : les quatre premiers configurés.",
+            "de": "Leer: die ersten vier eingerichteten.",
+            "es": "Vacío: los cuatro primeros configurados."
+          },
+          "required": false,
+          "options": [
+            {
+              "value": "1",
+              "label": {
+                "en": "Favorite 1",
+                "fr": "Favori 1",
+                "de": "Favorit 1",
+                "es": "Favorito 1"
+              }
+            },
+            {
+              "value": "2",
+              "label": {
+                "en": "Favorite 2",
+                "fr": "Favori 2",
+                "de": "Favorit 2",
+                "es": "Favorito 2"
+              }
+            },
+            {
+              "value": "3",
+              "label": {
+                "en": "Favorite 3",
+                "fr": "Favori 3",
+                "de": "Favorit 3",
+                "es": "Favorito 3"
+              }
+            },
+            {
+              "value": "4",
+              "label": {
+                "en": "Favorite 4",
+                "fr": "Favori 4",
+                "de": "Favorit 4",
+                "es": "Favorito 4"
+              }
+            },
+            {
+              "value": "5",
+              "label": {
+                "en": "Favorite 5",
+                "fr": "Favori 5",
+                "de": "Favorit 5",
+                "es": "Favorito 5"
+              }
+            },
+            {
+              "value": "6",
+              "label": {
+                "en": "Favorite 6",
+                "fr": "Favori 6",
+                "de": "Favorit 6",
+                "es": "Favorito 6"
+              }
+            },
+            {
+              "value": "7",
+              "label": {
+                "en": "Favorite 7",
+                "fr": "Favori 7",
+                "de": "Favorit 7",
+                "es": "Favorito 7"
+              }
+            },
+            {
+              "value": "8",
+              "label": {
+                "en": "Favorite 8",
+                "fr": "Favori 8",
+                "de": "Favorit 8",
+                "es": "Favorito 8"
+              }
+            }
+          ]
+        }
+      ],
+      "action_timeout_seconds": 60
     }
   ]
 }

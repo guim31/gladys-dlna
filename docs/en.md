@@ -23,8 +23,10 @@ on your local network: no account, no cloud.
 3. Some devices are both: a Denon amplifier, for instance, is a renderer and a small media server.
    The server is then listed with "(media server)" after its name.
 
-**Language of the feature names**: Gladys keeps the names of a device once it is added. Pick the
-language in **Configuration** before adding the devices.
+**Language of names and messages** (English, French, German or Spanish): Gladys keeps the names
+of a device once it is added, so pick the language in **Configuration** before adding the devices.
+It is also the language of the error messages of device commands and scene actions (Gladys does not
+tell an integration the language of its user).
 
 **A device that is not found**: SSDP discovery only works on the network of Gladys. Find the URL
 of the UPnP description of the device (in the documentation of the device or the server: MiniDLNA serves
@@ -87,7 +89,13 @@ minutes).
   and the first title, for the following actions.
 
 - **Play a URL on a DLNA renderer**: a web radio, a sound or an announcement file, by its http(s)
-  URL, with an optional title and volume. The URL must be reachable by the renderer itself.
+  URL, with an optional title and volume. The URL must be reachable by the renderer itself. Left
+  empty, the title is the name the web radio gives itself (its `icy-name` header, or else the title
+  on air when the stream starts), and the URL as a last resort: the integration asks the stream
+  once, for at most 2.5 seconds, without downloading it.
+
+- **Play a DLNA favorite**: plays one of the favorites of the configuration (see below) on a
+  renderer, with an optional volume. It returns whether it started and the name of the favorite.
 
 **Queue**: a DLNA renderer plays one media at a time. For an album or a folder, the integration
 keeps the list and hands the tracks over one after the other (without a gap when the renderer
@@ -99,11 +107,34 @@ Plus for the text-to-speech). It plays at the current volume (the core does not 
 the integrations), and the previous media is not resumed afterwards. To set the volume of an
 announcement, place a device control action on its Volume feature before it.
 
+## Favorites
+
+In **Configuration**, the **Favorites** part holds up to 8 favorites, each one a numbered group of
+fields:
+
+- **Name**: shown on the button (24 characters fit). Left empty, the favorite is named after the
+  host of its URL or after its search.
+- **URL**: a web radio or a file, by its http(s) URL; **or** a search on a **media server**: the
+  name of the server as it appears in Gladys (part of it is enough; empty when only one server is
+  added), what to search by (anything, title, artist, album, folder or playlist), the search
+  (`Abbey Road`, `Music/Jazz`), and how to play what is found (in order, shuffled, the first
+  result). When both are filled, the URL wins. A favorite with neither is ignored.
+
+The server is named rather than picked in a list on purpose: Gladys refuses to save a configuration
+whose list holds a device that no longer exists, and a deleted server would block every later
+change of the configuration.
+
 ## Dashboard
 
 Add the **DLNA player** widget and pick a renderer in its settings: it shows the title, the album,
 the state, the queue position, mute, a live volume gauge, and four buttons (play/pause, stop,
 volume − and +, by steps of 5 %).
+
+Add the **DLNA favorites** widget, pick a renderer and the favorites to show: one button per
+favorite, four at most per widget (Gladys allows four buttons in a widget). Add several widgets to
+reach more favorites. Left empty, the widget shows the first four favorites of the configuration.
+It also shows the favorite the renderer holds now, with its state, and marks its button with a
+check: it stays until something else is played on the renderer.
 
 ## Configuration actions
 
@@ -136,7 +167,8 @@ useful to play media from a server or announcements, next to their own integrati
 - **Checked by a user on a Sennheiser AMBEO Soundbar**: found by itself at install time, volume set
   from the widget, including during a Spotify Connect session.
 - **Not checked on real hardware yet**: the play queue and its gapless transitions, the network
-  search run by Gladys, and searching a real media server (MiniDLNA, Plex, Jellyfin). They are
+  search run by Gladys, searching a real media server (MiniDLNA, Plex, Jellyfin), the favorites and
+  their widget, and the station name read from a real web radio. They are
   covered by tests on simulated devices built from public formats. Please report any device that
   misbehaves, with the logs of the integration.
 
@@ -154,5 +186,8 @@ useful to play media from a server or announcements, next to their own integrati
   standby or busy…); its UPnP code is in the logs of the integration. The message follows the
   language of the configuration, except on the widget buttons for "nothing over DLNA", shown in
   the language of the user.
+- **A web radio shows its URL instead of its name**: the stream does not give a name (no `icy-name`
+  header), or did not answer within 2.5 seconds. Fill the title of the scene action, or make it a
+  favorite with a name.
 - **A file or a radio does not play**: the renderer must support its format, and reach its URL
   itself. A renderer in standby may take about ten seconds to start: the integration waits for it.

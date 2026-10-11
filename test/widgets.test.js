@@ -8,7 +8,13 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { validateWidgetContent } from '@gladysassistant/integration-sdk';
 import { scriptedDenon } from './helpers/scriptedRenderer.js';
-import { createWidgets, playerContent, PLAYER_WIDGET, refreshWidgets } from '../src/widgets.js';
+import {
+  createWidgets,
+  playerContent,
+  PLAYER_WIDGET,
+  refreshWidgets,
+  TEXTS,
+} from '../src/widgets.js';
 import { buildMetadata } from '../src/upnp/didl.js';
 
 async function setup() {
@@ -92,13 +98,18 @@ test('every button is handled and answers a short toast', async () => {
 test('toggle plays then pauses, volume steps are bounded', async () => {
   const { act, manager, id, state } = await setup();
   await manager.refresh(id);
-  assert.deepEqual(await act('toggle'), { en: 'Playing', fr: 'Lecture' });
+  assert.deepEqual(await act('toggle'), TEXTS.PLAYING);
   await manager.refresh(id);
-  assert.deepEqual(await act('toggle'), { en: 'Paused', fr: 'En pause' });
+  assert.deepEqual(await act('toggle'), TEXTS.PAUSED);
   assert.equal(state.transport, 'PAUSED_PLAYBACK');
   state.volume = 98;
   await manager.refresh(id);
-  assert.deepEqual(await act('volume_up'), { en: 'Volume 100%', fr: 'Volume 100 %' });
+  assert.deepEqual(await act('volume_up'), {
+    en: 'Volume 100%',
+    fr: 'Volume 100 %',
+    de: 'Lautstärke 100 %',
+    es: 'Volumen 100 %',
+  });
 });
 
 test('an unknown action or no renderer fails, so the user sees it', async () => {

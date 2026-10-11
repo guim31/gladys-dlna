@@ -10,6 +10,22 @@ the notes of the version's GitHub Release.
 
 ## [Unreleased]
 
+### Added
+
+- Favorites: up to 8 web radios, files or media server searches (folder, album, playlist…), named in
+  the configuration. A new "DLNA favorites" widget plays them in one tap (four per widget, add
+  several for more) and shows the favorite playing; a new "Play a DLNA favorite" scene action plays
+  one, with an optional volume.
+- German and Spanish: every text of the integration (configuration, scene cards, widgets, action
+  results, error messages) now exists in English, French, German and Spanish, and the language of
+  the feature names and messages can be German or Spanish.
+
+### Changed
+
+- "Play a URL" without a title shows the name of the web radio, read from its ICY headers
+  (`icy-name`, or the title on air), instead of the bare URL; the URL stays the last resort. A
+  renderer that reports the bare URL, or no title, also shows that name.
+
 ## [1.0.4] - 2026-10-11
 
 ### Fixed

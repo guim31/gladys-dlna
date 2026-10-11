@@ -8,7 +8,12 @@
 
 import { DEVICE_KINDS, deviceParams } from './index.js';
 
-const SERVER_SUFFIX = { en: ' (media server)', fr: ' (serveur multimédia)' };
+export const SERVER_SUFFIX = {
+  en: ' (media server)',
+  fr: ' (serveur multimédia)',
+  de: ' (Medienserver)',
+  es: ' (servidor multimedia)',
+};
 
 /**
  * The discovery payload of a server.

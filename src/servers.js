@@ -6,11 +6,13 @@
 
 import { DEVICE_KINDS, PARAMS, paramOf, parseDeviceExternalId } from './devices/index.js';
 import { SearchTimeoutError } from './upnp/server.js';
+import { UserError } from './i18n.js';
+import { MESSAGES } from './messages.js';
 
-export async function withServer({ gladys, registry }, externalId, work) {
+export async function withServer({ gladys, registry, language }, externalId, work) {
   const parsed = parseDeviceExternalId(gladys, externalId);
   if (parsed?.kind !== DEVICE_KINDS.SERVER) {
-    throw new Error('Pick a DLNA media server');
+    throw new UserError(MESSAGES.PICK_SERVER, language?.() ?? 'en');
   }
   const device = (gladys.devices ?? []).find((candidate) => candidate.external_id === externalId);
   const info = await registry.locate(

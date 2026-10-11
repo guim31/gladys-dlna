@@ -32,7 +32,9 @@ export const PLAYBACK_STATE = { PLAYING: 1, NOT_PLAYING: 0 };
 // text state is never empty, or the core ignores it).
 export const NOTHING_PLAYING = '—';
 
-const NAMES = {
+// Feature names per configured language (frozen by Gladys once a device is
+// added).
+export const NAMES = {
   en: {
     [RENDERER_FEATURES.PLAY]: 'Play',
     [RENDERER_FEATURES.PAUSE]: 'Pause',
@@ -56,6 +58,30 @@ const NAMES = {
     [RENDERER_FEATURES.PLAYBACK_STATE]: 'État de lecture',
     [RENDERER_FEATURES.NOW_PLAYING]: 'En cours de lecture',
     [RENDERER_FEATURES.NOTIFICATION]: 'Notification',
+  },
+  de: {
+    [RENDERER_FEATURES.PLAY]: 'Wiedergabe',
+    [RENDERER_FEATURES.PAUSE]: 'Pause',
+    [RENDERER_FEATURES.STOP]: 'Stopp',
+    [RENDERER_FEATURES.PREVIOUS]: 'Vorheriger Titel',
+    [RENDERER_FEATURES.NEXT]: 'Nächster Titel',
+    [RENDERER_FEATURES.VOLUME]: 'Lautstärke',
+    [RENDERER_FEATURES.MUTE]: 'Stumm',
+    [RENDERER_FEATURES.PLAYBACK_STATE]: 'Wiedergabestatus',
+    [RENDERER_FEATURES.NOW_PLAYING]: 'Aktuelle Wiedergabe',
+    [RENDERER_FEATURES.NOTIFICATION]: 'Benachrichtigung',
+  },
+  es: {
+    [RENDERER_FEATURES.PLAY]: 'Reproducir',
+    [RENDERER_FEATURES.PAUSE]: 'Pausa',
+    [RENDERER_FEATURES.STOP]: 'Detener',
+    [RENDERER_FEATURES.PREVIOUS]: 'Anterior',
+    [RENDERER_FEATURES.NEXT]: 'Siguiente',
+    [RENDERER_FEATURES.VOLUME]: 'Volumen',
+    [RENDERER_FEATURES.MUTE]: 'Silencio',
+    [RENDERER_FEATURES.PLAYBACK_STATE]: 'Estado de reproducción',
+    [RENDERER_FEATURES.NOW_PLAYING]: 'Reproduciendo ahora',
+    [RENDERER_FEATURES.NOTIFICATION]: 'Notificación',
   },
 };
 
