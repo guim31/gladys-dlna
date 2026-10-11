@@ -8,8 +8,8 @@
     "de": "DLNA/UPnP-Geräte (TV, Verstärker, Lautsprecher) steuern und Medienserver abspielen, 100 % lokal.",
     "es": "Controle sus reproductores DLNA/UPnP (TV, amplificador, altavoz) y sus servidores, 100 % local."
   },
-  "version": "1.0.4",
-  "docker_image": "ghcr.io/guim31/gladys-dlna:1.0.4",
+  "version": "1.1.0",
+  "docker_image": "ghcr.io/guim31/gladys-dlna:1.1.0",
   "gladys_version": ">=5.1.0",
   "cover_image": "https://raw.githubusercontent.com/guim31/gladys-dlna/main/cover.png",
   "categories": ["multimedia"],

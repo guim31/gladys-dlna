@@ -10,6 +10,8 @@ the notes of the version's GitHub Release.
 
 ## [Unreleased]
 
+## [1.1.0] - 2026-10-11
+
 ### Added
 
 - Favorites: up to 8 web radios, files or media server searches (folder, album, playlist…), named in
@@ -77,7 +79,8 @@ the notes of the version's GitHub Release.
 
 - The demo devices, actions, scenes and widget of the template.
 
-[Unreleased]: https://github.com/guim31/gladys-dlna/compare/v1.0.4...HEAD
+[Unreleased]: https://github.com/guim31/gladys-dlna/compare/v1.1.0...HEAD
+[1.1.0]: https://github.com/guim31/gladys-dlna/compare/v1.0.4...v1.1.0
 [1.0.4]: https://github.com/guim31/gladys-dlna/compare/v1.0.3...v1.0.4
 [1.0.3]: https://github.com/guim31/gladys-dlna/compare/v1.0.2...v1.0.3
 [1.0.2]: https://github.com/guim31/gladys-dlna/compare/v1.0.1...v1.0.2
