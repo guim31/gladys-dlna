@@ -191,3 +191,31 @@ test('no text of the code is left in English and French only', async () => {
     assert.doesNotMatch(source, /===\s*'fr'\s*\?/, `${name}: a text chosen by language`);
   }
 });
+
+test('German speaks to the user with "du", as the recent screens of Gladys do', async () => {
+  // The polite forms only: "Sie" (capitalized, a whole word) and the
+  // possessive "Ihr…". A lowercase "sie" (she, they, it) is fine.
+  const polite = /\b(Sie|Ihr|Ihre|Ihren|Ihrem|Ihrer|Ihres)\b/;
+  const german = collect(manifest).map(({ path, text }) => [path, text.de]);
+  const tables = { MESSAGES, ...MESSAGE_TABLES, WIDGET_TEXTS, ACTION_TEXTS, SERVER_SUFFIX, NAMES };
+  const visit = (value, path) => {
+    if (typeof value === 'function') return visit(value('Sample 42'), `${path}()`);
+    // Feature names: one table of strings per language.
+    if (path === 'NAMES') return visit(value.de, `${path}.de`);
+    if (isLocalized(value)) return german.push([path, value.de]);
+    if (typeof value === 'string') return german.push([path, value]);
+    for (const [key, child] of Object.entries(value)) visit(child, `${path}.${key}`);
+    return undefined;
+  };
+  for (const [name, table] of Object.entries(tables)) visit(table, name);
+  // Every `de:` literal of the code, wherever it lives.
+  const dir = new URL('../src/', import.meta.url);
+  for (const name of (await readdir(dir, { recursive: true })).filter((n) => n.endsWith('.js'))) {
+    const source = await readFile(new URL(name, dir), 'utf8');
+    for (const [line] of source.matchAll(/^\s*de:.*$/gm)) german.push([name, line]);
+  }
+  assert.ok(german.length > 300, `only ${german.length} German texts checked`);
+  for (const [path, text] of german) {
+    assert.doesNotMatch(text, polite, `${path}: "${text}" uses the polite form`);
+  }
+});

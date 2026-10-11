@@ -79,7 +79,8 @@ test/                             node --test; helpers/fakeNetwork.js serves fix
   together.
 - **User-facing text** exists in English, French, German and Spanish (the
   languages of Gladys): action messages, manifest texts, widget contents,
-  errors. `test/i18n.test.js` fails on a missing or empty language. The user
+  errors. `test/i18n.test.js` fails on a missing or empty language. German
+  says "du" (never "Sie"/"Ihr…", checked by the same test), Spanish "usted". The user
   documentation stays `docs/en.md` / `docs/fr.md`, kept in sync: the store
   only re-hosts these two.
 - **Style.** Prettier formats, ESLint catches mistakes. Comments explain why,

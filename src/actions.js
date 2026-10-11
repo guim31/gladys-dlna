@@ -41,13 +41,13 @@ export const TEXTS = {
   found: (list) => ({
     en: `Found: ${list.en}. Add the URL to the configuration, then scan.`,
     fr: `Trouvé : ${list.fr}. Ajoutez l'URL à la configuration, puis lancez une recherche.`,
-    de: `Gefunden: ${list.de}. Fügen Sie die URL der Konfiguration hinzu und starten Sie dann einen Scan.`,
+    de: `Gefunden: ${list.de}. Füge die URL der Konfiguration hinzu und starte dann einen Scan.`,
     es: `Encontrado: ${list.es}. Añada la URL a la configuración y luego inicie una búsqueda.`,
   }),
   BROWSE_TIMEOUT: {
     en: 'The server took too long to answer: try a deeper folder path.',
     fr: 'Le serveur a mis trop de temps à répondre : essayez un chemin de dossier plus précis.',
-    de: 'Der Server hat zu lange gebraucht: Versuchen Sie einen genaueren Ordnerpfad.',
+    de: 'Der Server hat zu lange gebraucht: Versuche einen genaueren Ordnerpfad.',
     es: 'El servidor tardó demasiado en responder: pruebe una ruta de carpeta más concreta.',
   },
   noFolder: (path) => ({

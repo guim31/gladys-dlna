@@ -27,13 +27,13 @@
       "label": {
         "en": "Finding your devices",
         "fr": "Trouver vos appareils",
-        "de": "Ihre Geräte finden",
+        "de": "Deine Geräte finden",
         "es": "Encontrar sus dispositivos"
       },
       "description": {
         "en": "Renderers and media servers of your network are found automatically: open the Discovery tab and add the ones you want. A device on another network (VLAN, other subnet) can be added by the URL of its UPnP description below.",
         "fr": "Les lecteurs et serveurs multimédias de votre réseau sont trouvés automatiquement : ouvrez l'onglet Découverte et ajoutez ceux que vous voulez. Un appareil d'un autre réseau (VLAN, autre sous-réseau) s'ajoute ci-dessous par l'URL de sa description UPnP.",
-        "de": "Wiedergabegeräte und Medienserver in Ihrem Netzwerk werden automatisch gefunden: Öffnen Sie den Tab „Entdecken“ und fügen Sie die gewünschten hinzu. Ein Gerät in einem anderen Netzwerk (VLAN, anderes Subnetz) lässt sich unten über die URL seiner UPnP-Beschreibung hinzufügen.",
+        "de": "Wiedergabegeräte und Medienserver in deinem Netzwerk werden automatisch gefunden: Öffne den Tab „Entdecken“ und füge die gewünschten hinzu. Ein Gerät in einem anderen Netzwerk (VLAN, anderes Subnetz) lässt sich unten über die URL seiner UPnP-Beschreibung hinzufügen.",
         "es": "Los reproductores y servidores multimedia de su red se encuentran automáticamente: abra la pestaña Descubrir y añada los que quiera. Un dispositivo de otra red (VLAN, otra subred) se añade abajo mediante la URL de su descripción UPnP."
       }
     },
@@ -49,7 +49,7 @@
       "description": {
         "en": "One or several UPnP description URLs, separated by commas. Use the action below to test one first.",
         "fr": "Une ou plusieurs URL de description UPnP, séparées par des virgules. Testez-en une d'abord avec l'action ci-dessous.",
-        "de": "Eine oder mehrere URLs von UPnP-Beschreibungen, durch Kommas getrennt. Testen Sie zuerst eine mit der Aktion unten.",
+        "de": "Eine oder mehrere URLs von UPnP-Beschreibungen, durch Kommas getrennt. Teste zuerst eine mit der Aktion unten.",
         "es": "Una o varias URL de descripción UPnP, separadas por comas. Pruebe primero una con la acción de abajo."
       },
       "placeholder": {
@@ -128,7 +128,7 @@
       "description": {
         "en": "Up to 8 media to play in one tap from the \"DLNA favorites\" widget or the \"Play a DLNA favorite\" scene action. Each favorite is a URL (web radio, file) or a search on a media server: fill one or the other. A favorite with neither is ignored.",
         "fr": "Jusqu'à 8 médias à lancer d'un geste depuis le widget « Favoris DLNA » ou l'action de scène « Lire un favori DLNA ». Chaque favori est une URL (radio web, fichier) ou une recherche sur un serveur multimédia : remplissez l'une ou l'autre. Un favori sans l'une ni l'autre est ignoré.",
-        "de": "Bis zu 8 Medien, die sich mit einem Tipp über das Widget „DLNA-Favoriten“ oder die Szenenaktion „DLNA-Favorit abspielen“ starten lassen. Jeder Favorit ist eine URL (Webradio, Datei) oder eine Suche auf einem Medienserver: Füllen Sie das eine oder das andere aus. Ein Favorit ohne beides wird ignoriert.",
+        "de": "Bis zu 8 Medien, die sich mit einem Tipp über das Widget „DLNA-Favoriten“ oder die Szenenaktion „DLNA-Favorit abspielen“ starten lassen. Jeder Favorit ist eine URL (Webradio, Datei) oder eine Suche auf einem Medienserver: Fülle das eine oder das andere aus. Ein Favorit ohne beides wird ignoriert.",
         "es": "Hasta 8 medios para iniciar con un toque desde el widget «Favoritos DLNA» o la acción de escena «Reproducir un favorito DLNA». Cada favorito es una URL (radio web, archivo) o una búsqueda en un servidor multimedia: rellene una u otra. Un favorito sin ninguna de las dos se ignora."
       }
     },
@@ -2377,7 +2377,7 @@
       "description": {
         "en": "Your favorite web radios and media in one tap, on a DLNA renderer.",
         "fr": "Vos radios web et médias favoris d'un geste, sur un lecteur DLNA.",
-        "de": "Ihre Lieblings-Webradios und -Medien mit einem Tipp auf einem DLNA-Gerät.",
+        "de": "Deine Lieblings-Webradios und -Medien mit einem Tipp auf einem DLNA-Gerät.",
         "es": "Sus radios web y medios favoritos con un toque, en un reproductor DLNA."
       },
       "icon": "star",

@@ -10,25 +10,25 @@ export const MESSAGES = {
   INIT_FAILED: {
     en: 'Initialization failed, check the integration logs.',
     fr: "L'initialisation a échoué, consultez les logs de l'intégration.",
-    de: 'Die Initialisierung ist fehlgeschlagen, prüfen Sie die Logs der Integration.',
+    de: 'Die Initialisierung ist fehlgeschlagen, prüfe die Logs der Integration.',
     es: 'La inicialización ha fallado, consulte los registros de la integración.',
   },
   PICK_RENDERER: {
     en: 'Pick a DLNA renderer.',
     fr: 'Choisissez un lecteur DLNA.',
-    de: 'Wählen Sie ein DLNA-Wiedergabegerät.',
+    de: 'Wähle ein DLNA-Wiedergabegerät.',
     es: 'Elija un reproductor DLNA.',
   },
   PICK_RENDERER_WIDGET: {
     en: 'Pick a DLNA renderer in the widget settings.',
     fr: 'Choisissez un lecteur DLNA dans les réglages du widget.',
-    de: 'Wählen Sie in den Widget-Einstellungen ein DLNA-Wiedergabegerät.',
+    de: 'Wähle in den Widget-Einstellungen ein DLNA-Wiedergabegerät.',
     es: 'Elija un reproductor DLNA en la configuración del widget.',
   },
   PICK_SERVER: {
     en: 'Pick a DLNA media server.',
     fr: 'Choisissez un serveur multimédia DLNA.',
-    de: 'Wählen Sie einen DLNA-Medienserver.',
+    de: 'Wähle einen DLNA-Medienserver.',
     es: 'Elija un servidor multimedia DLNA.',
   },
   URL_SCHEME: {
@@ -40,7 +40,7 @@ export const MESSAGES = {
   UNKNOWN_RENDERER: {
     en: 'This renderer is not in Gladys: add it from the Discover tab first.',
     fr: "Ce lecteur n'est pas dans Gladys : ajoutez-le d'abord depuis l'onglet Découverte.",
-    de: 'Dieses Wiedergabegerät ist nicht in Gladys: Fügen Sie es zuerst im Tab „Entdecken“ hinzu.',
+    de: 'Dieses Wiedergabegerät ist nicht in Gladys: Füge es zuerst im Tab „Entdecken“ hinzu.',
     es: 'Este reproductor no está en Gladys: añádalo primero desde la pestaña Descubrir.',
   },
   NOTHING_PLAYABLE: {
@@ -58,25 +58,25 @@ export const MESSAGES = {
   SEARCH_TIMEOUT: {
     en: 'The media server took too long to answer: search something narrower (an album, a folder path).',
     fr: 'Le serveur multimédia a mis trop de temps à répondre : cherchez plus précis (un album, un chemin de dossier).',
-    de: 'Der Medienserver hat zu lange gebraucht: Suchen Sie genauer (ein Album, ein Ordnerpfad).',
+    de: 'Der Medienserver hat zu lange gebraucht: Suche genauer (ein Album, ein Ordnerpfad).',
     es: 'El servidor multimedia tardó demasiado en responder: busque algo más concreto (un álbum, la ruta de una carpeta).',
   },
   SERVER_NOT_FOUND: {
     en: 'No DLNA media server of this name in Gladys: check the server name of the favorite.',
     fr: 'Aucun serveur multimédia DLNA de ce nom dans Gladys : vérifiez le nom du serveur du favori.',
-    de: 'Kein DLNA-Medienserver mit diesem Namen in Gladys: Prüfen Sie den Servernamen des Favoriten.',
+    de: 'Kein DLNA-Medienserver mit diesem Namen in Gladys: Prüfe den Servernamen des Favoriten.',
     es: 'No hay ningún servidor multimedia DLNA con este nombre en Gladys: compruebe el nombre del servidor del favorito.',
   },
   SEVERAL_SERVERS: {
     en: 'Several DLNA media servers are in Gladys: write the name of the server in the favorite.',
     fr: 'Plusieurs serveurs multimédias DLNA sont dans Gladys : indiquez le nom du serveur dans le favori.',
-    de: 'In Gladys gibt es mehrere DLNA-Medienserver: Geben Sie im Favoriten den Namen des Servers an.',
+    de: 'In Gladys gibt es mehrere DLNA-Medienserver: Gib im Favoriten den Namen des Servers an.',
     es: 'Hay varios servidores multimedia DLNA en Gladys: indique el nombre del servidor en el favorito.',
   },
   NO_FAVORITE: {
     en: 'This favorite is not configured: fill it in the configuration of the integration.',
     fr: "Ce favori n'est pas configuré : remplissez-le dans la configuration de l'intégration.",
-    de: 'Dieser Favorit ist nicht eingerichtet: Füllen Sie ihn in der Konfiguration der Integration aus.',
+    de: 'Dieser Favorit ist nicht eingerichtet: Fülle ihn in der Konfiguration der Integration aus.',
     es: 'Este favorito no está configurado: rellénelo en la configuración de la integración.',
   },
 };

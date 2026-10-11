@@ -64,7 +64,7 @@ export const TEXTS = {
   PICK_RENDERER: {
     en: 'Pick a DLNA renderer added to Gladys in the widget settings.',
     fr: 'Choisissez dans les réglages du widget un lecteur DLNA ajouté à Gladys.',
-    de: 'Wählen Sie in den Widget-Einstellungen ein zu Gladys hinzugefügtes DLNA-Wiedergabegerät.',
+    de: 'Wähle in den Widget-Einstellungen ein zu Gladys hinzugefügtes DLNA-Wiedergabegerät.',
     es: 'Elija en la configuración del widget un reproductor DLNA añadido a Gladys.',
   },
   UNREACHABLE: {
@@ -76,7 +76,7 @@ export const TEXTS = {
   NO_FAVORITE: {
     en: 'No favorite yet: add some in the configuration of the DLNA integration.',
     fr: "Aucun favori pour l'instant : ajoutez-en dans la configuration de l'intégration DLNA.",
-    de: 'Noch keine Favoriten: Fügen Sie welche in der Konfiguration der DLNA-Integration hinzu.',
+    de: 'Noch keine Favoriten: Füge welche in der Konfiguration der DLNA-Integration hinzu.',
     es: 'Aún no hay favoritos: añádalos en la configuración de la integración DLNA.',
   },
   VOLUME: { en: 'Volume', fr: 'Volume', de: 'Lautstärke', es: 'Volumen' },

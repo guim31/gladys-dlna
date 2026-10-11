@@ -53,31 +53,31 @@ export const NO_DLNA_MEDIA = {
   [COMMANDS.PLAY]: {
     en: `Nothing to play over DLNA: ${OTHER_SOURCE.en}. Start a media from Gladys, or use the app of that source.`,
     fr: "Le lecteur n'a rien à lire en DLNA : il joue peut-être une autre source (Spotify, AirPlay, entrée HDMI…). Lancez un média depuis Gladys, ou utilisez l'application de cette source.",
-    de: `Nichts per DLNA abzuspielen: ${OTHER_SOURCE.de}. Starten Sie ein Medium aus Gladys oder nutzen Sie die App dieser Quelle.`,
+    de: `Nichts per DLNA abzuspielen: ${OTHER_SOURCE.de}. Starte ein Medium aus Gladys oder nutze die App dieser Quelle.`,
     es: `Nada que reproducir por DLNA: ${OTHER_SOURCE.es}. Inicie un medio desde Gladys o use la aplicación de esa fuente.`,
   },
   [COMMANDS.PAUSE]: {
     en: `Nothing to pause over DLNA: ${OTHER_SOURCE.en}. Pause it from the app of that source.`,
     fr: `Rien à mettre en pause en DLNA : ${OTHER_SOURCE.fr}. Mettez-la en pause depuis l'application de cette source.`,
-    de: `Nichts per DLNA zu pausieren: ${OTHER_SOURCE.de}. Pausieren Sie sie in der App dieser Quelle.`,
+    de: `Nichts per DLNA zu pausieren: ${OTHER_SOURCE.de}. Pausiere sie in der App dieser Quelle.`,
     es: `Nada que pausar por DLNA: ${OTHER_SOURCE.es}. Páusela desde la aplicación de esa fuente.`,
   },
   [COMMANDS.STOP]: {
     en: `Nothing to stop over DLNA: ${OTHER_SOURCE.en}. Stop it from the app of that source.`,
     fr: `Rien à arrêter en DLNA : ${OTHER_SOURCE.fr}. Arrêtez-la depuis l'application de cette source.`,
-    de: `Nichts per DLNA zu stoppen: ${OTHER_SOURCE.de}. Stoppen Sie sie in der App dieser Quelle.`,
+    de: `Nichts per DLNA zu stoppen: ${OTHER_SOURCE.de}. Stoppe sie in der App dieser Quelle.`,
     es: `Nada que detener por DLNA: ${OTHER_SOURCE.es}. Deténgala desde la aplicación de esa fuente.`,
   },
   [COMMANDS.NEXT]: {
     en: `No next track over DLNA: ${OTHER_SOURCE.en}. Change track from the app of that source.`,
     fr: `Pas de piste suivante en DLNA : ${OTHER_SOURCE.fr}. Changez de piste depuis l'application de cette source.`,
-    de: `Kein nächster Titel per DLNA: ${OTHER_SOURCE.de}. Wechseln Sie den Titel in der App dieser Quelle.`,
+    de: `Kein nächster Titel per DLNA: ${OTHER_SOURCE.de}. Wechsle den Titel in der App dieser Quelle.`,
     es: `No hay pista siguiente por DLNA: ${OTHER_SOURCE.es}. Cambie de pista desde la aplicación de esa fuente.`,
   },
   [COMMANDS.PREVIOUS]: {
     en: `No previous track over DLNA: ${OTHER_SOURCE.en}. Change track from the app of that source.`,
     fr: `Pas de piste précédente en DLNA : ${OTHER_SOURCE.fr}. Changez de piste depuis l'application de cette source.`,
-    de: `Kein vorheriger Titel per DLNA: ${OTHER_SOURCE.de}. Wechseln Sie den Titel in der App dieser Quelle.`,
+    de: `Kein vorheriger Titel per DLNA: ${OTHER_SOURCE.de}. Wechsle den Titel in der App dieser Quelle.`,
     es: `No hay pista anterior por DLNA: ${OTHER_SOURCE.es}. Cambie de pista desde la aplicación de esa fuente.`,
   },
 };
@@ -86,7 +86,7 @@ export const NO_DLNA_MEDIA = {
 export const STOP_WITHOUT_DLNA_MEDIA = {
   en: 'Stop sent, but no DLNA media is loaded: if another source plays (Spotify, AirPlay, HDMI input…), stop it from the app of that source.',
   fr: "Stop envoyé, mais aucun média DLNA n'est chargé : si une autre source joue (Spotify, AirPlay, entrée HDMI…), arrêtez-la depuis l'application de cette source.",
-  de: 'Stopp gesendet, aber kein DLNA-Medium ist geladen: Falls eine andere Quelle spielt (Spotify, AirPlay, HDMI-Eingang…), stoppen Sie sie in der App dieser Quelle.',
+  de: 'Stopp gesendet, aber kein DLNA-Medium ist geladen: Falls eine andere Quelle spielt (Spotify, AirPlay, HDMI-Eingang…), stoppe sie in der App dieser Quelle.',
   es: 'Stop enviado, pero no hay ningún medio DLNA cargado: si suena otra fuente (Spotify, AirPlay, entrada HDMI…), deténgala desde la aplicación de esa fuente.',
 };
 
@@ -95,19 +95,19 @@ const TRANSITION_NOT_AVAILABLE = {
   [COMMANDS.PLAY]: {
     en: 'The renderer cannot start playing right now (transition not available): it may be waking up or switching source. Try again in a moment.',
     fr: 'Le lecteur ne peut pas lancer la lecture pour le moment (transition impossible) : il sort peut-être de veille ou change de source. Réessayez dans un instant.',
-    de: 'Das Gerät kann die Wiedergabe gerade nicht starten (Übergang nicht verfügbar): Es wacht vielleicht auf oder wechselt die Quelle. Versuchen Sie es gleich noch einmal.',
+    de: 'Das Gerät kann die Wiedergabe gerade nicht starten (Übergang nicht verfügbar): Es wacht vielleicht auf oder wechselt die Quelle. Versuche es gleich noch einmal.',
     es: 'El reproductor no puede iniciar la reproducción ahora (transición no disponible): quizá esté saliendo del modo de espera o cambiando de fuente. Vuelva a intentarlo en un momento.',
   },
   [COMMANDS.PAUSE]: {
     en: 'The renderer cannot pause this media (transition not available): a live stream often cannot be paused. Use Stop.',
     fr: 'Le lecteur ne peut pas mettre ce média en pause (transition impossible) : un flux en direct ne se met souvent pas en pause. Utilisez Stop.',
-    de: 'Das Gerät kann dieses Medium nicht pausieren (Übergang nicht verfügbar): Ein Livestream lässt sich oft nicht pausieren. Verwenden Sie Stopp.',
+    de: 'Das Gerät kann dieses Medium nicht pausieren (Übergang nicht verfügbar): Ein Livestream lässt sich oft nicht pausieren. Verwende Stopp.',
     es: 'El reproductor no puede pausar este medio (transición no disponible): una emisión en directo a menudo no se puede pausar. Use Stop.',
   },
   [COMMANDS.STOP]: {
     en: 'The renderer cannot stop right now (transition not available). Try again in a moment.',
     fr: "Le lecteur ne peut pas s'arrêter pour le moment (transition impossible). Réessayez dans un instant.",
-    de: 'Das Gerät kann gerade nicht stoppen (Übergang nicht verfügbar). Versuchen Sie es gleich noch einmal.',
+    de: 'Das Gerät kann gerade nicht stoppen (Übergang nicht verfügbar). Versuche es gleich noch einmal.',
     es: 'El reproductor no puede detenerse ahora (transición no disponible). Vuelva a intentarlo en un momento.',
   },
   [COMMANDS.NEXT]: {
@@ -139,7 +139,7 @@ const UNSUPPORTED_FORMAT = {
 const INVALID_INSTANCE = {
   en: 'The renderer refused the command (invalid InstanceID). Restart the renderer if this persists.',
   fr: 'Le lecteur a refusé la commande (InstanceID invalide). Redémarrez-le si cela persiste.',
-  de: 'Das Gerät hat den Befehl abgelehnt (ungültige InstanceID). Starten Sie es neu, falls das anhält.',
+  de: 'Das Gerät hat den Befehl abgelehnt (ungültige InstanceID). Starte es neu, falls das anhält.',
   es: 'El reproductor rechazó el comando (InstanceID no válido). Reinícielo si el problema persiste.',
 };
 const NOT_SUPPORTED = {
@@ -180,13 +180,13 @@ const AV_TRANSPORT_MESSAGES = {
   715: {
     en: 'The media is busy (content busy). Try again in a moment.',
     fr: 'Le média est occupé. Réessayez dans un instant.',
-    de: 'Das Medium ist belegt. Versuchen Sie es gleich noch einmal.',
+    de: 'Das Medium ist belegt. Versuche es gleich noch einmal.',
     es: 'El medio está ocupado. Vuelva a intentarlo en un momento.',
   },
   716: {
     en: 'The renderer cannot reach the media (resource not found): check that its address is reachable from the renderer.',
     fr: "Le lecteur n'atteint pas le média (ressource introuvable) : vérifiez que son adresse est joignable depuis le lecteur.",
-    de: 'Das Gerät erreicht das Medium nicht (Ressource nicht gefunden): Prüfen Sie, ob seine Adresse vom Gerät aus erreichbar ist.',
+    de: 'Das Gerät erreicht das Medium nicht (Ressource nicht gefunden): Prüfe, ob seine Adresse vom Gerät aus erreichbar ist.',
     es: 'El reproductor no alcanza el medio (recurso no encontrado): compruebe que su dirección sea accesible desde el reproductor.',
   },
   717: {
@@ -210,7 +210,7 @@ const COMMON_MESSAGES = {
   501: {
     en: 'The renderer could not carry out the command (action failed): it may be in standby or busy. Try again in a moment.',
     fr: "Le lecteur n'a pas pu exécuter la commande (échec de l'action) : il est peut-être en veille ou occupé. Réessayez dans un instant.",
-    de: 'Das Gerät konnte den Befehl nicht ausführen (Aktion fehlgeschlagen): Es ist vielleicht im Standby oder beschäftigt. Versuchen Sie es gleich noch einmal.',
+    de: 'Das Gerät konnte den Befehl nicht ausführen (Aktion fehlgeschlagen): Es ist vielleicht im Standby oder beschäftigt. Versuche es gleich noch einmal.',
     es: 'El reproductor no pudo ejecutar el comando (la acción falló): quizá esté en espera u ocupado. Vuelva a intentarlo en un momento.',
   },
   600: INVALID_ARGS,
