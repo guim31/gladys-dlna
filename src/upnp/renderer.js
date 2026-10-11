@@ -3,7 +3,7 @@
 // media to play) and RenderingControl (volume, mute) of instance 0.
 // -----------------------------------------------------------------------------
 
-import { soapCall } from './soap.js';
+import { UpnpError, soapCall } from './soap.js';
 import { SERVICE_TYPES, findService } from './description.js';
 import { buildMetadata, parseDidl, parseDuration } from './didl.js';
 
@@ -46,14 +46,19 @@ export function describeMedia(positionInfo = {}, mediaInfo = {}) {
 }
 
 export class PlaybackNotStartedError extends Error {
-  constructor(seconds) {
+  constructor(seconds, reason) {
     super(
-      `The renderer did not start playing within ${seconds} s: still waking up, ` +
-        'format not supported, or URL not reachable from the renderer',
+      reason ??
+        `The renderer did not start playing within ${seconds} s: still waking up, ` +
+          'format not supported, or URL not reachable from the renderer',
     );
     this.name = 'PlaybackNotStartedError';
   }
 }
+
+// AVTransport refusals for lack of media: 701 Transition not available,
+// 702 No contents.
+const isNoMediaRefusal = (err) => err instanceof UpnpError && ['701', '702'].includes(err.code);
 
 export class Renderer {
   /**
@@ -177,6 +182,19 @@ export class Renderer {
     await this.play();
   }
 
+  /** The URI of the loaded media: '' when none (NO_MEDIA_PRESENT, or an
+   * empty CurrentURI), null when the renderer does not tell. */
+  async mediaUri() {
+    try {
+      const { CurrentTransportState } = await this.av('GetTransportInfo');
+      if (CurrentTransportState === 'NO_MEDIA_PRESENT') return '';
+      const { CurrentURI } = await this.av('GetMediaInfo');
+      return CurrentURI ?? null;
+    } catch {
+      return null;
+    }
+  }
+
   /** The transport state and the loaded URI, or null while the renderer
    * cannot answer (waking up). */
   async readTransport() {
@@ -213,7 +231,9 @@ export class Renderer {
    * `replayGapMs` while it sits STOPPED without having played, load the URI again if it is
    * no longer ours, and press Play once more if the playback stops within
    * `settleMs` of its start. Throws a PlaybackNotStartedError when nothing
-   * plays within `timeoutMs`. `cancelled()` returning true stops the follow
+   * plays within `timeoutMs`, at once when the media cannot be loaded again
+   * and Play is refused for lack of media (701, 702): pressing Play for 75 s
+   * would change nothing. `cancelled()` returning true stops the follow
    * (another media or a command came in the meantime: never fight it).
    */
   async ensurePlaying(url, { metadata, title, mime, cancelled = () => false } = {}) {
@@ -226,10 +246,23 @@ export class Renderer {
 
     const press = async (transport) => {
       lastPress = this.now();
+      let loadRefused = false;
+      if (transport.uri !== url) {
+        await this.setUri(url, loaded).catch(() => {
+          loadRefused = true;
+        });
+        // Never press Play on another media than ours.
+        if (loadRefused && transport.uri) return;
+      }
       try {
-        if (transport.uri !== url) await this.setUri(url, loaded);
         await this.play();
-      } catch {
+      } catch (err) {
+        if (loadRefused && isNoMediaRefusal(err)) {
+          throw new PlaybackNotStartedError(
+            timeoutMs / 1000,
+            `The renderer lost the media and refuses to load it again (${err.message})`,
+          );
+        }
         // Still busy: the next round looks again.
       }
     };

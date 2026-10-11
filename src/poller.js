@@ -19,7 +19,9 @@ import { DEVICE_TRANSPORTS, createLogger } from '@gladysassistant/integration-sd
 import { DEVICE_KINDS, PARAMS, paramOf, parseDeviceExternalId } from './devices/index.js';
 import { NOTHING_PLAYING, PLAYBACK_STATE, RENDERER_FEATURES } from './devices/renderer.js';
 import { PLAYBACK } from './upnp/renderer.js';
+import { UpnpError } from './upnp/soap.js';
 import { buildMetadata, mimeOf, pickResource } from './upnp/didl.js';
+import { COMMANDS, toUserError } from './errors.js';
 
 const logger = createLogger({ name: 'renderers' });
 
@@ -52,6 +54,14 @@ const END_TOLERANCE_S = 15;
 const START_GRACE_MS = 10000;
 const NOW_PLAYING_MAX = 200;
 export const VOLUME_STEP = 5;
+
+const COMMAND_OF_FEATURE = {
+  [RENDERER_FEATURES.PLAY]: COMMANDS.PLAY,
+  [RENDERER_FEATURES.PAUSE]: COMMANDS.PAUSE,
+  [RENDERER_FEATURES.STOP]: COMMANDS.STOP,
+  [RENDERER_FEATURES.NEXT]: COMMANDS.NEXT,
+  [RENDERER_FEATURES.PREVIOUS]: COMMANDS.PREVIOUS,
+};
 
 /** "Artist — Title", the title alone, or the placeholder. */
 export function formatNowPlaying({ title, artist } = {}) {
@@ -110,6 +120,9 @@ export class RendererManager {
     timers = globalThis,
     now = () => Date.now(),
     random = Math.random,
+    // The language of the configuration: the core relays the error text of
+    // a command without telling the user's language.
+    language = () => 'en',
   }) {
     this.gladys = gladys;
     this.registry = registry;
@@ -119,6 +132,7 @@ export class RendererManager {
     this.timers = timers;
     this.now = now;
     this.random = random;
+    this.language = language;
     this.entries = new Map();
     this.active = true;
   }
@@ -155,6 +169,7 @@ export class RendererManager {
           running: null,
           soon: false,
           playToken: 0,
+          loadedUri: null,
         });
         this.schedule(this.entries.get(externalId), 0);
       }
@@ -379,6 +394,7 @@ export class RendererManager {
 
   async startTrack(entry, renderer, track) {
     entry.playToken += 1;
+    entry.loadedUri = track.uri;
     entry.queue.preloaded = false;
     entry.queue.startedAt = this.now();
     entry.lastPlaying = null;
@@ -471,46 +487,85 @@ export class RendererManager {
 
   // --- Commands ---------------------------------------------------------------
 
-  /** Run a device feature command (onSetValue). */
-  async command(externalId, featureKey, value) {
+  /**
+   * A refused command, for the user: the raw UPnP error goes to the logs, the
+   * error thrown carries a text in the configured language (see errors.js).
+   * A 701 reads as "no DLNA media" unless the renderer holds the media Gladys
+   * loaded.
+   */
+  async explainFailure(entry, renderer, err, context = {}) {
+    if (!(err instanceof UpnpError)) throw err;
+    logger.warn(`${entry.device.name}: ${err.message}`);
+    let { mediaLoaded } = context;
+    if (mediaLoaded === undefined && err.code === '701') {
+      const uri = await renderer.mediaUri();
+      mediaLoaded = uri === null ? undefined : !!uri && uri === entry.loadedUri;
+    }
+    throw toUserError(err, { ...context, mediaLoaded, language: this.language() });
+  }
+
+  /**
+   * Run a device feature command (onSetValue). With `checkMedia`, resolves
+   * `{ noDlnaMedia: true }` when Stop was sent while the renderer held no
+   * DLNA media: it answers 200 and may well have done nothing (the device
+   * plays Spotify). Opt-in: two more requests, and a device command must be
+   * acknowledged within 5 s.
+   */
+  async command(externalId, featureKey, value, { checkMedia = false } = {}) {
     const entry = this.entryOf(externalId);
     const renderer = await this.rendererOf(entry);
     // A command ends any follow-up of a playback start (see followStart).
     entry.playToken += 1;
+    const failed = (context) => (err) => this.explainFailure(entry, renderer, err, context);
+    const asked = failed({ command: COMMAND_OF_FEATURE[featureKey] });
+    // A track of the queue is loaded and started by Gladys.
+    const jumped = failed({ mediaLoaded: true });
+    let outcome = {};
     switch (featureKey) {
       case RENDERER_FEATURES.PLAY:
-        await renderer.play();
+        await renderer.play().catch(asked);
         break;
       case RENDERER_FEATURES.PAUSE:
         entry.lastPlaying = null;
-        await renderer.pause();
+        await renderer.pause().catch(asked);
         break;
-      case RENDERER_FEATURES.STOP:
+      case RENDERER_FEATURES.STOP: {
         entry.lastPlaying = null;
-        await renderer.stop();
+        const uri = checkMedia ? await renderer.mediaUri() : null;
+        await renderer.stop().catch(asked);
+        if (uri === '') outcome = { noDlnaMedia: true };
         break;
+      }
       case RENDERER_FEATURES.NEXT:
-        if (!(entry.queue && (await this.jump(entry, renderer, 1)))) await renderer.next();
+        if (!(entry.queue && (await this.jump(entry, renderer, 1).catch(jumped)))) {
+          await renderer.next().catch(asked);
+        }
         break;
       case RENDERER_FEATURES.PREVIOUS:
-        if (!(entry.queue && (await this.jump(entry, renderer, -1)))) await renderer.previous();
+        if (!(entry.queue && (await this.jump(entry, renderer, -1).catch(jumped)))) {
+          await renderer.previous().catch(asked);
+        }
         break;
       case RENDERER_FEATURES.VOLUME:
-        await renderer.setVolume(Number(value));
+        await renderer.setVolume(Number(value)).catch(asked);
         break;
       case RENDERER_FEATURES.MUTE:
-        await renderer.setMute(!(await renderer.getMute()));
+        await renderer
+          .getMute()
+          .then((muted) => renderer.setMute(!muted))
+          .catch(asked);
         break;
       case RENDERER_FEATURES.NOTIFICATION:
         // The core's "play a notification" action sends the URL of a Gladys
         // Plus text-to-speech MP3. The command is acknowledged within 5 s: the
         // playback check (and the http retry of an https URL) goes on after.
         await this.playUrl(externalId, String(value), { title: 'Gladys' });
-        return;
+        return outcome;
       default:
         throw new Error(`Unsupported feature: ${featureKey}`);
     }
     this.refreshSoon(entry);
+    return outcome;
   }
 
   async togglePlayback(externalId) {
@@ -527,7 +582,7 @@ export class RendererManager {
       ? entry.status.volume
       : await renderer.getVolume();
     const target = Math.min(100, Math.max(0, (current ?? 0) + delta));
-    await renderer.setVolume(target);
+    await renderer.setVolume(target).catch((err) => this.explainFailure(entry, renderer, err));
     if (entry.status) entry.status.volume = target;
     this.refreshSoon(entry);
     return target;
@@ -538,7 +593,7 @@ export class RendererManager {
     const entry = this.entryOf(externalId);
     const renderer = await this.rendererOf(entry);
     if (!renderer.hasVolume) return false;
-    await renderer.setVolume(volume);
+    await renderer.setVolume(volume).catch((err) => this.explainFailure(entry, renderer, err));
     this.refreshSoon(entry);
     return true;
   }
@@ -550,13 +605,15 @@ export class RendererManager {
     entry.queue = null;
     entry.lastPlaying = null;
     entry.playToken += 1;
+    entry.loadedUri = url;
+    const failed = (err) => this.explainFailure(entry, renderer, err, { mediaLoaded: true });
     if (Number.isFinite(volume) && renderer.hasVolume) {
-      await renderer.setVolume(volume);
+      await renderer.setVolume(volume).catch(failed);
     }
     this.refreshSoon(entry);
     // Answer once the renderer accepted Play: waking from standby can take
     // more than a minute, longer than a command or a scene may wait.
-    await renderer.playUrl(url, { title, verify: false });
+    await renderer.playUrl(url, { title, verify: false }).catch(failed);
     this.followStart(entry, renderer, url, { title });
     return url;
   }
@@ -590,7 +647,9 @@ export class RendererManager {
     }
     if (shuffled) shuffle(tracks, this.random);
     entry.queue = { tracks, index: 0, preloaded: false, noPreload: false, startedAt: this.now() };
-    await this.startTrack(entry, renderer, tracks[0]);
+    await this.startTrack(entry, renderer, tracks[0]).catch((err) =>
+      this.explainFailure(entry, renderer, err, { mediaLoaded: true }),
+    );
     // The search already used most of the scene's 90 s: the first track is
     // followed in the background, the next ones need no check.
     this.followStart(entry, renderer, tracks[0].uri, { metadata: tracks[0].metadata });

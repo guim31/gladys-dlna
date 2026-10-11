@@ -196,6 +196,12 @@ code de ce dépôt. Compléter ce fichier quand un nouveau piège est découvert
 - **En mode sombre, le style `primary` d'un bouton de widget ne se voit pas** (#3153) : signaler
   un choix courant par l'icône (`check-circle`), jamais par le style.
 - Dans une grille `card-list`, la `date` s'affiche **à la place** du sous-titre.
+- **Erreur d'un bouton de widget** (5.1.4) : le front affiche « L'action a échoué. — » suivi du
+  texte de l'erreur (chaîne, 200 caractères), sans que le conteneur connaisse la langue (le
+  `widget.action` n'en transmet pas). Un message **résolu** `{ en, fr }`, lui, est traduit par le
+  front (repli sur `en`). L'erreur d'une commande d'appareil revient en HTTP 400 que les cartes du
+  front ignorent (simple état d'erreur), celle d'une action de scène part dans les logs de Gladys
+  (`logger.warn`) : seul le widget montre le texte.
 - `onWidgetAction` fait recharger le widget dès la résolution, alors que `requestWidgetRefresh`
   est plafonné à un appel toutes les 10 s. Un toast d'action est tronqué à 200 caractères.
 - Le cœur met le contenu d'un widget en cache par (réglages, langue, unités) : pré-localiser

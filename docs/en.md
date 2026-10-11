@@ -145,7 +145,14 @@ useful to play media from a server or announcements, next to their own integrati
 - **Nothing in the Discovery tab**: check that the devices are on and on the same network as
   Gladys; read the logs of the integration (`Discovery: N SSDP answer(s)…`). Add a description URL
   by hand otherwise.
-- **A command fails with "701"** (transition not available): the renderer refuses this command in
-  its current state, for instance Play with nothing loaded.
+- **"Nothing to play over DLNA"** (or nothing to pause, stop, no next track): the renderer has no
+  DLNA media loaded, and may be playing another source (Spotify, AirPlay, an HDMI input…). Start a
+  media from Gladys, or use the app of that source. Stop is still sent, since some devices stop the
+  other source too. The logs of the integration keep the UPnP code the renderer answered (for
+  instance `Play failed: 701 Transition not available`).
+- **Another refusal** reads as its meaning (format not accepted, media not reachable, renderer in
+  standby or busy…); its UPnP code is in the logs of the integration. The message follows the
+  language of the configuration, except on the widget buttons for "nothing over DLNA", shown in
+  the language of the user.
 - **A file or a radio does not play**: the renderer must support its format, and reach its URL
   itself. A renderer in standby may take about ten seconds to start: the integration waits for it.

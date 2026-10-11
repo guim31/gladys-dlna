@@ -20,6 +20,7 @@ import { RENDERER_FEATURES } from './devices/renderer.js';
 import { PLAYBACK } from './upnp/renderer.js';
 import { VOLUME_STEP } from './poller.js';
 import { isRenderer } from './servers.js';
+import { NoDlnaMediaError, STOP_WITHOUT_DLNA_MEDIA } from './errors.js';
 
 const logger = createLogger({ name: 'widgets' });
 
@@ -170,28 +171,44 @@ export function createWidgets(context) {
         }
         const externalId = settings.device;
         logger.info(`onWidgetAction <- ${PLAYER_WIDGET}.${actionKey} ${externalId}`);
-        switch (actionKey) {
-          case PLAYER_ACTIONS.TOGGLE: {
-            const now = await renderers.togglePlayback(externalId);
-            return now === PLAYBACK.PLAYING
-              ? { en: 'Playing', fr: 'Lecture' }
-              : { en: 'Paused', fr: 'En pause' };
-          }
-          case PLAYER_ACTIONS.STOP:
-            await renderers.command(externalId, RENDERER_FEATURES.STOP);
-            return { en: 'Stopped', fr: 'Arrêté' };
-          case PLAYER_ACTIONS.VOLUME_DOWN:
-          case PLAYER_ACTIONS.VOLUME_UP: {
-            const delta = actionKey === PLAYER_ACTIONS.VOLUME_UP ? VOLUME_STEP : -VOLUME_STEP;
-            const volume = await renderers.stepVolume(externalId, delta);
-            return { en: `Volume ${volume}%`, fr: `Volume ${volume} %` };
-          }
-          default:
-            throw new Error(`Unknown widget action: ${actionKey}`);
+        try {
+          return await runAction(externalId, actionKey);
+        } catch (err) {
+          // Not a failure of Gladys: the device plays another source. A
+          // resolved message is shown in the user's language (an error
+          // only in the configured one, after "The action failed.").
+          if (err instanceof NoDlnaMediaError) return err.text;
+          throw err;
         }
       },
     },
   };
+
+  async function runAction(externalId, actionKey) {
+    switch (actionKey) {
+      case PLAYER_ACTIONS.TOGGLE: {
+        const now = await renderers.togglePlayback(externalId);
+        return now === PLAYBACK.PLAYING
+          ? { en: 'Playing', fr: 'Lecture' }
+          : { en: 'Paused', fr: 'En pause' };
+      }
+      case PLAYER_ACTIONS.STOP: {
+        const { noDlnaMedia } = await renderers.command(externalId, RENDERER_FEATURES.STOP, 1, {
+          checkMedia: true,
+        });
+        // Never a "Stopped" that may be false (see RendererManager.command).
+        return noDlnaMedia ? STOP_WITHOUT_DLNA_MEDIA : { en: 'Stopped', fr: 'Arrêté' };
+      }
+      case PLAYER_ACTIONS.VOLUME_DOWN:
+      case PLAYER_ACTIONS.VOLUME_UP: {
+        const delta = actionKey === PLAYER_ACTIONS.VOLUME_UP ? VOLUME_STEP : -VOLUME_STEP;
+        const volume = await renderers.stepVolume(externalId, delta);
+        return { en: `Volume ${volume}%`, fr: `Volume ${volume} %` };
+      }
+      default:
+        throw new Error(`Unknown widget action: ${actionKey}`);
+    }
+  }
 }
 
 /** Freshness nudge for every widget (rate-limited core-side to 1 per 10 s). */
