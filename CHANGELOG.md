@@ -10,6 +10,8 @@ the notes of the version's GitHub Release.
 
 ## [Unreleased]
 
+## [1.0.4] - 2026-10-11
+
 ### Fixed
 
 - A command refused by the renderer now reads as its meaning instead of a raw UPnP error such as
@@ -59,7 +61,8 @@ the notes of the version's GitHub Release.
 
 - The demo devices, actions, scenes and widget of the template.
 
-[Unreleased]: https://github.com/guim31/gladys-dlna/compare/v1.0.3...HEAD
+[Unreleased]: https://github.com/guim31/gladys-dlna/compare/v1.0.4...HEAD
+[1.0.4]: https://github.com/guim31/gladys-dlna/compare/v1.0.3...v1.0.4
 [1.0.3]: https://github.com/guim31/gladys-dlna/compare/v1.0.2...v1.0.3
 [1.0.2]: https://github.com/guim31/gladys-dlna/compare/v1.0.1...v1.0.2
 [1.0.1]: https://github.com/guim31/gladys-dlna/releases/tag/v1.0.1
