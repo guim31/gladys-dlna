@@ -22,6 +22,17 @@ const logger = createLogger({ name: 'discovery' });
 
 export const SSDP_SCAN_SECONDS = 5;
 
+// A background scan runs again every few minutes while a renderer is off:
+// its summary and a missing SSDP scan are logged in info only when they
+// change, the repeats in debug.
+const lastLogged = { summary: null, scanError: null };
+
+/** Forget what was logged (tests). */
+export function resetDiscoveryLog() {
+  lastLogged.summary = null;
+  lastLogged.scanError = null;
+}
+
 /** The description URLs of the devices already created in Gladys. */
 export function createdLocations(gladys) {
   return (gladys.devices ?? [])
@@ -63,10 +74,14 @@ export async function discover({ gladys, registry, config }) {
   let answers = [];
   try {
     answers = await gladys.scanNetwork('ssdp', { timeoutSeconds: SSDP_SCAN_SECONDS });
+    if (lastLogged.scanError !== null) logger.info('SSDP scan available again');
+    lastLogged.scanError = null;
   } catch (err) {
     // A core without mediated discovery, or a scan already running: the URLs
     // typed by hand and the created devices still work.
-    logger.warn(`SSDP scan unavailable: ${err.message}`);
+    const repeated = lastLogged.scanError === err.message;
+    lastLogged.scanError = err.message;
+    logger[repeated ? 'debug' : 'warn'](`SSDP scan unavailable: ${err.message}`);
   }
   const locations = [
     ...locationsFromSsdp(answers),
@@ -74,10 +89,13 @@ export async function discover({ gladys, registry, config }) {
     ...createdLocations(gladys),
   ];
   const infos = await registry.describeAll(locations);
-  logger.info(
-    `Discovery: ${answers.length} SSDP answer(s), ${locations.length} description(s), ` +
-      `${infos.filter((info) => info.kind === DEVICE_KINDS.RENDERER).length} renderer(s), ` +
-      `${infos.filter((info) => info.kind === DEVICE_KINDS.SERVER).length} server(s)`,
+  const found =
+    `${infos.filter((info) => info.kind === DEVICE_KINDS.RENDERER).length} renderer(s), ` +
+    `${infos.filter((info) => info.kind === DEVICE_KINDS.SERVER).length} server(s)`;
+  const changed = found !== lastLogged.summary;
+  lastLogged.summary = found;
+  logger[changed ? 'info' : 'debug'](
+    `Discovery: ${answers.length} SSDP answer(s), ${locations.length} description(s), ${found}`,
   );
   return infos;
 }

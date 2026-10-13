@@ -84,3 +84,16 @@ export function isHttpUrl(value) {
     return false;
   }
 }
+
+/**
+ * A URL fit for the logs: no credentials, no query string or fragment (a
+ * stream URL may carry a token there).
+ */
+export function loggableUrl(value) {
+  try {
+    const url = new URL(value);
+    return `${url.protocol}//${url.host}${url.pathname}`;
+  } catch {
+    return '(invalid URL)';
+  }
+}

@@ -8,7 +8,7 @@
 // -----------------------------------------------------------------------------
 
 import { createLogger } from '@gladysassistant/integration-sdk';
-import { fetchText } from './upnp/http.js';
+import { fetchText, loggableUrl } from './upnp/http.js';
 import {
   SERVICE_TYPES,
   findService,
@@ -60,7 +60,7 @@ export class Registry {
       fetchImpl: this.fetchImpl,
     });
     if (!ok) {
-      throw new Error(`HTTP ${status} on ${url}`);
+      throw new Error(`HTTP ${status} on ${loggableUrl(url)}`);
     }
     return text;
   }
@@ -70,7 +70,7 @@ export class Registry {
     try {
       return parseScpd(await this.fetch(service.scpdUrl));
     } catch (err) {
-      logger.debug(`SCPD unavailable (${service.scpdUrl}): ${err.message}`);
+      logger.debug(`SCPD unavailable (${loggableUrl(service.scpdUrl)}): ${err.message}`);
       return null;
     }
   }
@@ -144,7 +144,7 @@ export class Registry {
       try {
         return await this.describe(location);
       } catch (err) {
-        logger.debug(`Description unavailable (${location}): ${err.message}`);
+        logger.debug(`Description unavailable (${loggableUrl(location)}): ${err.message}`);
         throw err;
       }
     });
@@ -174,7 +174,7 @@ export class Registry {
     await this.describe(location);
     const found = this.get(kind, platformId);
     if (!found) {
-      throw new Error(`${kind} ${platformId} is no longer described at ${location}`);
+      throw new Error(`${kind} ${platformId} is no longer described at ${loggableUrl(location)}`);
     }
     return found;
   }

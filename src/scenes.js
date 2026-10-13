@@ -12,7 +12,7 @@
 
 import { createLogger } from '@gladysassistant/integration-sdk';
 import { SEARCH_BY } from './upnp/server.js';
-import { isHttpUrl } from './upnp/http.js';
+import { isHttpUrl, loggableUrl } from './upnp/http.js';
 import { PLAY_MODES, languageOf, playFromServer, requireRenderer, volumeOf } from './playback.js';
 import { playFavorite } from './favorites.js';
 import { UserError } from './i18n.js';
@@ -53,7 +53,7 @@ export function createSceneActions(context) {
       if (!isHttpUrl(url)) {
         throw new UserError(MESSAGES.URL_SCHEME, languageOf(context));
       }
-      logger.info(`Scene action play_url <- ${url}`);
+      logger.info(`Scene action play_url <- ${loggableUrl(url)}`);
       await context.renderers.playUrl(fields.renderer, url, {
         // Empty: the station name of a web radio, else the URL.
         title: String(fields.title ?? '').trim() || undefined,

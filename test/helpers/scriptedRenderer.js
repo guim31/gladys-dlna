@@ -37,7 +37,9 @@ export function fakeTimers() {
   };
 }
 
-export async function scriptedDenon({ extraDevices = [] } = {}) {
+// `gladys`: the SDK's fake Gladys (`@gladysassistant/integration-sdk/testing`)
+// instead of the local recorder, connected here with the two devices created.
+export async function scriptedDenon({ extraDevices = [], gladys: sdkGladys } = {}) {
   const network = createFakeNetwork();
   const location = network.serve('denon-avr-s650h');
   const registry = new Registry({ fetchImpl: network.fetch });
@@ -122,7 +124,7 @@ export async function scriptedDenon({ extraDevices = [] } = {}) {
     state.transport = 'PLAYING';
   };
 
-  const gladys = createFakeGladys();
+  const gladys = sdkGladys ?? createFakeGladys();
   const renderer = buildRendererDevice(
     gladys,
     infos.find((info) => info.kind === 'renderer'),
@@ -133,7 +135,12 @@ export async function scriptedDenon({ extraDevices = [] } = {}) {
     infos.find((info) => info.kind === 'server'),
     config,
   );
-  gladys.devices.push(renderer, server, ...extraDevices);
+  if (sdkGladys) {
+    sdkGladys.fake.devices.push(renderer, server, ...extraDevices);
+    await sdkGladys.connect();
+  } else {
+    gladys.devices.push(renderer, server, ...extraDevices);
+  }
 
   const timers = fakeTimers();
   let clock = 1_000_000;

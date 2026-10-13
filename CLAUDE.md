@@ -182,8 +182,20 @@ code de ce dépôt. Compléter ce fichier quand un nouveau piège est découvert
 - **Nom d'une radio web** : `icy-name` du flux, demandé par `Icy-MetaData: 1` (une requête, 2,5 s,
   au plus le premier bloc de métadonnées, puis coupée), sinon le `StreamTitle` du premier bloc,
   sinon l'URL. Seulement quand aucun titre n'est donné : la notification du cœur passe « Gladys ».
-- Le SDK publié (0.14.0) n'a ni `publishChangedStates` ni `/testing`, que le README de `master`
-  documente déjà.
+- SDK 0.15.0 : `publishChangedStates` et `@gladysassistant/integration-sdk/testing` existent.
+  `StatePublisher` (src/states.js) est gardé (il marche, `remember` sert après une commande) ; le
+  faux Gladys du SDK sert dans `test/polling.test.js` (`scriptedDenon({ gladys })`), le faux maison
+  `test/helpers/fakeGladys.js` reste pour le reste des tests.
+- **Polling (#3198)** : les renderers sont publiés en `should_poll: false` et sondés par le
+  minuteur de `RendererManager` (lancé par `sync()` à la connexion et à chaque création
+  d'appareil) ; `onPoll` n'est qu'un repli. Le cœur 5.2.0 ne sonderait de toute façon jamais un
+  appareil créé sans `should_poll`. `test/polling.test.js` le vérifie sans jamais appeler `onPoll`.
+- **Logs** : en info, seulement le cycle de vie (démarrage, renderer perdu / retrouvé, résumé de
+  découverte quand il change) et une ligne par action de l'utilisateur. Une erreur qui se répète à
+  chaque sondage ou à chaque scan de fond (états refusés, SSDP indisponible) : une ligne au début,
+  une au retour, le reste en debug (`LOG_LEVEL=debug`). Les URL passent par `loggableUrl` (ni
+  identifiants ni paramètres). `test/polling.test.js` vérifie qu'un cycle normal n'écrit rien en
+  info.
 
 **Formulaires de configuration et actions**
 

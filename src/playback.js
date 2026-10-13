@@ -54,7 +54,7 @@ export async function playFromServer(
   // "first" keeps the server order (album order for an album or a folder).
   const items = mode === 'first' ? found.slice(0, 1) : found;
   if (items.length === 0) {
-    logger.info(`Nothing found for ${by} "${query}"`);
+    logger.debug(`Nothing found for ${by} "${query}"`);
     return { found: false, count: 0, title: '' };
   }
   if (volume !== undefined) {
