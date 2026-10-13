@@ -10,6 +10,8 @@ the notes of the version's GitHub Release.
 
 ## [Unreleased]
 
+## [1.1.1] - 2026-10-13
+
 ### Changed
 
 - Integration SDK 0.15.0 and up-to-date development dependencies.
@@ -90,7 +92,8 @@ the notes of the version's GitHub Release.
 
 - The demo devices, actions, scenes and widget of the template.
 
-[Unreleased]: https://github.com/guim31/gladys-dlna/compare/v1.1.0...HEAD
+[Unreleased]: https://github.com/guim31/gladys-dlna/compare/v1.1.1...HEAD
+[1.1.1]: https://github.com/guim31/gladys-dlna/compare/v1.1.0...v1.1.1
 [1.1.0]: https://github.com/guim31/gladys-dlna/compare/v1.0.4...v1.1.0
 [1.0.4]: https://github.com/guim31/gladys-dlna/compare/v1.0.3...v1.0.4
 [1.0.3]: https://github.com/guim31/gladys-dlna/compare/v1.0.2...v1.0.3
