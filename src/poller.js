@@ -181,6 +181,8 @@ export class RendererManager {
           media: null,
           // The favorite Gladys started, while it is what the renderer holds.
           favorite: null,
+          // Gladys refuses the states: logged once until it accepts them.
+          publishFailing: false,
         });
         this.schedule(this.entries.get(externalId), 0);
       }
@@ -392,10 +394,21 @@ export class RendererManager {
         value: { text: formatNowPlaying(status) },
       });
     }
+    // A refusal repeats on every poll: one line when it starts, one when it
+    // ends, the attempts in between in debug.
     try {
       await this.publisher.publish(states);
+      if (entry.publishFailing) {
+        entry.publishFailing = false;
+        logger.info(`States of ${entry.device.name} published again`);
+      }
     } catch (err) {
-      logger.warn(`States of ${entry.device.name} not published: ${err.message}`);
+      if (entry.publishFailing) {
+        logger.debug(`States of ${entry.device.name} still not published: ${err.message}`);
+      } else {
+        entry.publishFailing = true;
+        logger.warn(`States of ${entry.device.name} not published: ${err.message}`);
+      }
     }
 
     if (entry.playback && playback && playback !== entry.playback) {
@@ -500,7 +513,7 @@ export class RendererManager {
     // Something else plays now (another controller, the vendor app).
     const settled = this.now() - (queue.startedAt ?? 0) > START_GRACE_MS;
     if (settled && status.uri && !isTrack(status, current) && !isTrack(status, next)) {
-      logger.info(`${entry.device.name} plays another media: queue dropped`);
+      logger.debug(`${entry.device.name} plays another media: queue dropped`);
       entry.queue = null;
     }
     return false;
@@ -676,7 +689,9 @@ export class RendererManager {
     const token = entry.playToken;
     this.pending = renderer
       .ensurePlaying(url, { ...options, cancelled: () => entry.playToken !== token })
-      .catch((err) => logger.info(`${entry.device.name}: ${err.message}`))
+      // One line per playback that never started (ensurePlaying retries
+      // silently and throws once, at the end).
+      .catch((err) => logger.warn(`${entry.device.name}: ${err.message}`))
       .finally(() => this.refreshSoon(entry));
   }
 

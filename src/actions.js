@@ -4,7 +4,7 @@
 // -----------------------------------------------------------------------------
 
 import { createLogger } from '@gladysassistant/integration-sdk';
-import { isHttpUrl } from './upnp/http.js';
+import { isHttpUrl, loggableUrl } from './upnp/http.js';
 import { withServer } from './servers.js';
 import { SearchTimeoutError } from './upnp/server.js';
 import { DEVICE_KINDS } from './devices/index.js';
@@ -92,7 +92,7 @@ export function createActions(context) {
       if (!isHttpUrl(url)) {
         throw new UserError(MESSAGES.URL_SCHEME, languageOf(context));
       }
-      logger.info(`Action test_description_url <- ${url}`);
+      logger.info(`Action test_description_url <- ${loggableUrl(url)}`);
       const infos = await registry.describe(url);
       if (infos.length === 0) {
         return TEXTS.NOTHING_IN_DESCRIPTION;

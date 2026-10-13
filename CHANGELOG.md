@@ -10,6 +10,16 @@ the notes of the version's GitHub Release.
 
 ## [Unreleased]
 
+### Changed
+
+- Integration SDK 0.15.0 and up-to-date development dependencies.
+- Quieter logs: a renderer that plays something else, a repeated background scan or a playback
+  start that failed no longer fill the info level; a refusal of Gladys to store the states is
+  logged once when it starts and once when it ends, not on every poll. The URLs of the logs no
+  longer show credentials or query strings.
+- The renderers keep being polled by the integration itself, independently of the Gladys
+  scheduler (GladysAssistant/Gladys#3198): now covered by a test.
+
 ## [1.1.0] - 2026-10-11
 
 ### Added
