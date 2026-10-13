@@ -397,8 +397,9 @@ export class RendererManager {
     // A refusal repeats on every poll: one line when it starts, one when it
     // ends, the attempts in between in debug.
     try {
-      await this.publisher.publish(states);
-      if (entry.publishFailing) {
+      const sent = await this.publisher.publish(states);
+      // Nothing sent (same states as the last accepted ones) proves nothing.
+      if (entry.publishFailing && sent > 0) {
         entry.publishFailing = false;
         logger.info(`States of ${entry.device.name} published again`);
       }

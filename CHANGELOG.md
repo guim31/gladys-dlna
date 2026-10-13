@@ -13,10 +13,11 @@ the notes of the version's GitHub Release.
 ### Changed
 
 - Integration SDK 0.15.0 and up-to-date development dependencies.
-- Quieter logs: a renderer that plays something else, a repeated background scan or a playback
-  start that failed no longer fill the info level; a refusal of Gladys to store the states is
-  logged once when it starts and once when it ends, not on every poll. The URLs of the logs no
-  longer show credentials or query strings.
+- Quieter logs: a renderer that plays something else, a repeated background scan or a scene that
+  plays a favorite no longer fill the info level; a refusal of Gladys to store the states, or a
+  network scan that is unavailable, is logged once when it starts and once when it ends, not on
+  every poll. A playback that never started is now logged once as a warning. The URLs of the logs
+  no longer show credentials or query strings.
 - The renderers keep being polled by the integration itself, independently of the Gladys
   scheduler (GladysAssistant/Gladys#3198): now covered by a test.
 

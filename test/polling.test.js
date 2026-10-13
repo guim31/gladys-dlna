@@ -1,8 +1,8 @@
 // -----------------------------------------------------------------------------
 // The renderers are published with should_poll: false and polled by the
-// container's own timer: the core's scheduler never polls them (and, before
-// GladysAssistant/Gladys#3199, never polled a device created without
-// should_poll anyway). Nothing may depend on onPoll.
+// container's own timer: the core's scheduler never polls them (and Gladys 5.2.0
+// never polls a device created without should_poll, GladysAssistant/Gladys#3198,
+// even once its fix #3199 ships). Nothing may depend on onPoll.
 //
 // And the logs stay quiet: a normal cycle writes nothing in info, a repeated
 // failure is logged once when it starts and once when it ends.
@@ -49,8 +49,9 @@ function captureLogs(t) {
   };
 }
 
-test('the container polls the renderers itself: no onPoll needed', async () => {
+test('the container polls the renderers itself: no onPoll needed', async (t) => {
   const gladys = createSdkFakeGladys({ selector: 'dlna' });
+  t.after(() => gladys.disconnect());
   const denon = await scriptedDenon({ gladys });
   const { manager, timers, feature, renderer, state } = denon;
   assert.equal(renderer.should_poll, false);
@@ -71,7 +72,6 @@ test('the container polls the renderers itself: no onPoll needed', async () => {
   assert.equal(gladys.fake.lastState(feature(RENDERER_FEATURES.PLAYBACK_STATE)), 1);
   assert.equal(timers.last().delay, POLL_INTERVALS_MS.PLAYING);
   assert.equal(manager.entries.size, 1);
-  await gladys.disconnect();
 });
 
 test('a normal cycle writes nothing in info', async (t) => {
@@ -133,6 +133,7 @@ test('states refused by Gladys: one warning, then one line once accepted again',
 
 test('repeated background scans log their summary and a missing scan once', async (t) => {
   resetDiscoveryLog();
+  t.after(resetDiscoveryLog);
   const logs = captureLogs(t);
   const network = createFakeNetwork();
   const location = network.serve('denon-avr-s650h');
@@ -149,7 +150,11 @@ test('repeated background scans log their summary and a missing scan once', asyn
   await discover({ gladys, registry, config });
   await discover({ gladys, registry, config });
   assert.equal(logs.at('warn').length, 1);
-  resetDiscoveryLog();
+
+  gladys.scanNetwork = createFakeGladys({ ssdp: [ssdpAnswer(location)] }).scanNetwork;
+  await discover({ gladys, registry, config });
+  assert.equal(logs.at('warn').length, 1);
+  assert.ok(logs.at('info').some((line) => /available again/.test(line)));
 });
 
 test('URLs are logged without credentials nor query string', () => {

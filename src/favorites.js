@@ -113,7 +113,7 @@ export async function playFavorite(context, renderer, slot, { volume, budgetMs }
   if (!favorite) {
     throw new UserError(MESSAGES.NO_FAVORITE, languageOf(context));
   }
-  logger.info(`Favorite ${favorite.slot} "${favorite.name}" -> ${renderer}`);
+  logger.debug(`Favorite ${favorite.slot} "${favorite.name}" -> ${renderer}`);
   const mark = { slot: favorite.slot, signature: favorite.signature };
   if (favorite.kind === FAVORITE_KINDS.URL) {
     await context.renderers.playUrl(renderer, favorite.url, {
