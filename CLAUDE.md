@@ -224,6 +224,11 @@ code de ce dépôt. Compléter ce fichier quand un nouveau piège est découvert
   bridge `--internal` recevait des M-SEARCH de l'hôte). MiniDLNA : `TotalMatches` 0 sur la racine,
   albumArtURI en `JPEG_TN` 160 px seulement ; les images d'un dossier sont des `imageItem` avec une
   ressource (ne pas les mettre en file). upmpdcli coupe le son en mettant le volume à 0.
+- Restes connus (relecture du 26/10, non corrigés) : la pochette annoncée par le renderer
+  (`status.albumArtUri`) prime sur celle de la file ; la réduction des pochettes tourne sur le fil
+  principal (jusqu'à ~2 s pour un JPEG de 25 Mpx) ; `play` peut dépasser les 10 s du cœur avec un
+  renderer lent (résolution 5 s, puis jusqu'à 3 appels SOAP de 4 s hors budget) ; sur un renderer
+  à petite plage de volume, 50 → 51 % peut donner la même valeur brute, donc aucun retour d'état.
 
 **Formulaires de configuration et actions**
 

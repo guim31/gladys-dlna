@@ -537,7 +537,11 @@ export class RendererManager {
         sample?.key === key &&
         sample.value === status.position &&
         this.now() - sample.at >= FROZEN_POSITION_MS;
-      if (sample?.key !== key || sample.value !== status.position) {
+      if (status.playback !== PLAYBACK.PLAYING) {
+        // Only a position read while playing can be frozen: after a pause,
+        // the first reading again shows where it stopped.
+        entry.sample = null;
+      } else if (sample?.key !== key || sample.value !== status.position) {
         entry.sample = { key, value: status.position, at: this.now() };
       }
       if (!frozen) snapshot.position = Math.round(status.position);
@@ -583,7 +587,8 @@ export class RendererManager {
   async startTrack(entry, renderer, track) {
     entry.playToken += 1;
     entry.loadedUri = track.uri;
-    entry.queue.preloaded = null;
+    // Unknown (not null): an older next URI may still be on the renderer.
+    entry.queue.preloaded = undefined;
     entry.queue.startedAt = this.now();
     entry.lastPlaying = null;
     entry.sample = null;
@@ -607,7 +612,12 @@ export class RendererManager {
     const queue = entry.queue;
     if (!queue || !renderer.canPreload || queue.noPreload) return;
     const index = followingIndex(queue, entry.repeat);
-    const next = index === -1 || index === queue.index ? null : queue.tracks[index];
+    // The current URI again (repeat-one, the same track queued next): the
+    // renderer could not tell the two apart, it is started at the end.
+    const next =
+      index === -1 || queue.tracks[index].uri === queue.tracks[queue.index]?.uri
+        ? null
+        : queue.tracks[index];
     if (next === queue.preloaded) return;
     if (!next) {
       // Best effort: a renderer refusing an empty next URI moves on to the
@@ -1032,6 +1042,16 @@ export class RendererManager {
    */
   async enqueue(externalId, items, mode) {
     const entry = this.entryOf(externalId);
+    // The awaits first: a poll may close or replace the queue meanwhile.
+    const renderer = await this.rendererOf(entry);
+    const sink = await renderer.getSink();
+    const tracks = items
+      .slice(0, MAX_QUEUE)
+      .map((item) => trackOf(item, sink))
+      .filter(Boolean);
+    if (tracks.length === 0) {
+      throw new UserError(MESSAGES.NOTHING_PLAYABLE, this.language());
+    }
     let queue = entry.queue;
     if (!queue) {
       const current = this.currentTrack(entry);
@@ -1049,15 +1069,6 @@ export class RendererManager {
       };
       entry.queue = queue;
       entry.favorite = null;
-    }
-    const renderer = await this.rendererOf(entry);
-    const sink = await renderer.getSink();
-    const tracks = items
-      .slice(0, MAX_QUEUE)
-      .map((item) => trackOf(item, sink))
-      .filter(Boolean);
-    if (tracks.length === 0) {
-      throw new UserError(MESSAGES.NOTHING_PLAYABLE, this.language());
     }
     // Room first taken from the tracks already played.
     const over = queue.tracks.length + tracks.length - MAX_QUEUE;

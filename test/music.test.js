@@ -708,3 +708,95 @@ test('the music handlers answer through the SDK: acks of the fake Gladys', async
   assert.equal(queue.data.current_index, null);
   assert.equal(POLL_INTERVALS_MS.IDLE, 15000);
 });
+
+test('a title cut to fit its id still designates its object', async () => {
+  // Each CJK character takes 9 characters once encoded: the id keeps half
+  // of the title, which is no longer the title of the object.
+  const title =
+    '交響曲第9番ニ短調作品125「合唱付き」第4楽章：プレスト〜アレグロ・アッサイ〜歓喜の歌（シラーの詩による）ベルリン・フィルハーモニー管弦楽団';
+  const objects = [...library(), track('jp1', '1$2', title, 'ベートーヴェン', '交響曲', 1)];
+  const { catalog, device, platformId, manager, id } = await setup({ objects });
+  const media = mediaId(KIND.ITEM, platformId, 'jp1', title);
+  assert.ok(Array.from(parseMediaId(media).title).length < 80, 'the title was cut');
+  await catalog.play(device, { id: media, type: 'track' }, 'replace');
+  assert.equal(manager.entries.get(id).queue.tracks[0].title, title);
+});
+
+test('after a pause, the first position read again is published', async () => {
+  const { manager, id, tick } = await setup();
+  const entry = manager.entries.get(id);
+  const playing = {
+    transportState: 'PLAYING',
+    playback: PLAYBACK.PLAYING,
+    uri: 'http://x/a.mp3',
+    title: 'A',
+    artist: '',
+    album: '',
+    albumArtUri: null,
+    position: 31,
+    duration: 200,
+    volume: null,
+    muted: null,
+  };
+  assert.equal(manager.nowPlayingOf(entry, playing).position, 31);
+  const paused = { ...playing, transportState: 'PAUSED_PLAYBACK', playback: PLAYBACK.PAUSED };
+  assert.equal(manager.nowPlayingOf(entry, paused).position, 31);
+  tick(600_000);
+  assert.equal(manager.nowPlayingOf(entry, paused).position, 31);
+  // Resumed: the renderer still reads 31 s, which is not frozen.
+  const resumed = manager.nowPlayingOf(entry, playing);
+  assert.equal(resumed.playback_state, 1);
+  assert.equal(resumed.position, 31);
+});
+
+test('an artist plays each track once, though its server lists it twice', async () => {
+  const artist = {
+    kind: 'container',
+    id: '1$4',
+    parentId: '1',
+    title: 'Miles Davis',
+    upnpClass: 'object.container.person.musicArtist',
+  };
+  const twice = (one, id, parentId) => ({ ...one, id, parentId });
+  const so = track('m1', '1$4$1', 'So What', 'Miles Davis', 'Kind of Blue', 1);
+  const fred = track('m2', '1$4$1', 'Freddie Freeloader', 'Miles Davis', 'Kind of Blue', 2);
+  const objects = [
+    ...library(),
+    artist,
+    folder('1$4$0', '1$4', '- All Albums -'),
+    twice(so, 'm1-all', '1$4$0'),
+    twice(fred, 'm2-all', '1$4$0'),
+    { ...folder('1$4$1', '1$4', 'Kind of Blue'), upnpClass: 'object.container.album.musicAlbum' },
+    so,
+    fred,
+  ];
+  const { catalog, device, platformId, manager, id } = await setup({ objects });
+  const media = mediaId(KIND.CONTAINER, platformId, '1$4', 'Miles Davis');
+  await catalog.play(device, { id: media, type: 'artist' }, 'replace');
+  assert.deepEqual(
+    manager.entries.get(id).queue.tracks.map((one) => one.title),
+    ['So What', 'Freddie Freeloader'],
+  );
+});
+
+test('the current track queued next is not preloaded: the renderer could not tell them apart', async () => {
+  const { catalog, device, platformId, manager, id, state } = await setup();
+  const album = mediaId(KIND.CONTAINER, platformId, '1$3$1', 'Abbey Road');
+  await catalog.play(device, { id: album, type: 'album' }, 'replace');
+  assert.match(state.next.uri, /a2\.mp3$/);
+  const current = mediaId(KIND.ITEM, platformId, 'a1', 'Come Together');
+  await catalog.play(device, { id: current, type: 'track' }, 'next');
+  assert.deepEqual(
+    manager.entries.get(id).queue.tracks.map((one) => one.title),
+    ['Come Together', 'Come Together', 'Something'],
+  );
+  assert.equal(state.next.uri, '', 'the next URI taken back');
+});
+
+test('nothing playable to enqueue leaves what plays untouched', async () => {
+  const { manager, id, state } = await setup();
+  state.playForeign('Radio show');
+  await manager.refresh(id);
+  await assert.rejects(manager.enqueue(id, [], 'next'), /nothing|playable/i);
+  assert.equal(manager.entries.get(id).queue, null, 'no queue made of the radio');
+});

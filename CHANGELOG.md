@@ -36,6 +36,8 @@ the notes of the version's GitHub Release.
 - The "Now playing" text feature stays, next to the new title, artist and album features.
 - A renderer that cannot be reached is published as stopped with nothing loaded.
 - Pictures of a folder (`cover.jpg`) are no longer queued as tracks when a scene plays a folder.
+- A track a media server lists twice (an artist's "- All Albums -" view and each album) is queued
+  once.
 - Gladys 5.3.0 or later is required (SDK 0.16.0).
 
 ## [1.1.2] - 2026-10-22

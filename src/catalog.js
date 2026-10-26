@@ -73,6 +73,11 @@ const hint = (title) =>
     .slice(0, HINT_LENGTH)
     .join('');
 
+// The title kept in an id may have been cut to fit (mediaId): it is a prefix
+// of the object's title, and an empty one says nothing.
+const sameTitle = (object, title) =>
+  normalizeText(hint(object.title)).startsWith(normalizeText(title));
+
 /** The MediaItem id of a server object, or null when it cannot fit. */
 export function mediaId(kind, platformId, objectId, title = '') {
   const base = `${PREFIX}:${kind}:${platformId}:${encodeURIComponent(objectId)}:`;
@@ -218,9 +223,12 @@ export function createCatalog(context) {
   async function onServer(platformId, budgetMs, work) {
     const server = servers().find((candidate) => candidate.platformId === platformId);
     if (!server) throw fail(MESSAGES.SERVER_GONE);
+    // Locating the server (its description, after a forget) counts too: the
+    // core gives up after 10 s.
+    const started = Date.now();
     try {
       return await withServer(context, server.externalId, (client) =>
-        work(client.withDeadline(budgetMs)),
+        work(client.withDeadline(budgetMs - (Date.now() - started))),
       );
     } catch (err) {
       if (err instanceof SearchTimeoutError) throw fail(MESSAGES.SEARCH_TIMEOUT, err);
@@ -292,35 +300,45 @@ export function createCatalog(context) {
     const types = type ? [type] : DEFAULT_SEARCH;
     return onServer(platformId, BUDGET_MS.SEARCH, async (server) => {
       const found = [];
-      for (const wanted of types) {
-        const criteria = await criteriaFor(server, wanted, query);
-        if (criteria === null) {
-          // No Search: one bounded crawl for every type at once.
-          await server.crawl((object) => {
-            const kind = describeObject(object).type;
-            if (types.includes(kind) && matchesQuery(object, needle)) found.push(object);
-            return found.length >= limit * types.length;
-          });
-          break;
-        }
-        try {
-          const { items, containers } = await server.search('0', criteria, {
-            max: limit,
-            pageSize: limit,
-          });
-          found.push(
-            ...[...containers, ...items].filter(
-              (object) => describeObject(object).type === wanted && matchesQuery(object, needle),
-            ),
-          );
-        } catch (err) {
-          // One type refused (a criteria the server does not take): the next.
-          if (err instanceof SearchTimeoutError) throw err;
-          logger.debug(`Search of ${wanted} refused: ${err.message}`);
-        }
+      try {
+        await searchTypes(server, types, query, needle, limit, found);
+      } catch (err) {
+        // Out of time with some results: show them rather than an error.
+        if (!(err instanceof SearchTimeoutError) || found.length === 0) throw err;
+        logger.debug(`Search on ${platformId} cut by its budget: partial results`);
       }
       return found;
     });
+  }
+
+  async function searchTypes(server, types, query, needle, limit, found) {
+    for (const wanted of types) {
+      const criteria = await criteriaFor(server, wanted, query);
+      if (criteria === null) {
+        // No Search: one bounded crawl for every type at once.
+        await server.crawl((object) => {
+          const kind = describeObject(object).type;
+          if (types.includes(kind) && matchesQuery(object, needle)) found.push(object);
+          return found.length >= limit * types.length;
+        });
+        break;
+      }
+      try {
+        const { items, containers } = await server.search('0', criteria, {
+          max: limit,
+          pageSize: limit,
+        });
+        found.push(
+          ...[...containers, ...items].filter(
+            (object) => describeObject(object).type === wanted && matchesQuery(object, needle),
+          ),
+        );
+      } catch (err) {
+        // One type refused (a criteria the server does not take): the next.
+        if (err instanceof SearchTimeoutError) throw err;
+        logger.debug(`Search of ${wanted} refused: ${err.message}`);
+      }
+    }
   }
 
   /** onMusicSearch: every server added to Gladys, its results deduplicated. */
@@ -364,8 +382,7 @@ export function createCatalog(context) {
     const title = normalizeText(ref.title);
     if (!title) return null;
     const kind = ref.kind === KIND.CONTAINER ? 'container' : 'item';
-    const same = (object) =>
-      object.kind === kind && normalizeText(hint(object.title)) === normalizeText(hint(ref.title));
+    const same = (object) => object.kind === kind && sameTitle(object, ref.title);
     if ((await server.canSearch('dc:title')) && (await server.canSearch('upnp:class'))) {
       try {
         const { items, containers } = await server.search(
@@ -399,10 +416,7 @@ export function createCatalog(context) {
       } catch (err) {
         if (!isGone(err)) throw err;
       }
-      const renamed =
-        object &&
-        ref.objectId !== '0' &&
-        normalizeText(hint(object.title)) !== normalizeText(hint(ref.title));
+      const renamed = object && ref.objectId !== '0' && !sameTitle(object, ref.title);
       if (!object || renamed) {
         logger.debug(`Object ${ref.objectId} moved: looked up by its title`);
         object = await findAgain(server, ref);
