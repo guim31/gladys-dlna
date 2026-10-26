@@ -5,7 +5,7 @@
 
 import { UpnpError, soapCall } from './soap.js';
 import { SERVICE_TYPES, findService } from './description.js';
-import { buildMetadata, parseDidl, parseDuration } from './didl.js';
+import { buildMetadata, formatDuration, parseDidl, parseDuration, pickArtwork } from './didl.js';
 
 const INSTANCE = { InstanceID: '0' };
 const MASTER = { InstanceID: '0', Channel: 'Master' };
@@ -41,6 +41,7 @@ export function describeMedia(positionInfo = {}, mediaInfo = {}) {
     title: track?.title || media?.title || '',
     artist: track?.artist || media?.artist || '',
     album: track?.album || media?.album || '',
+    albumArtUri: pickArtwork(track) ?? pickArtwork(media),
     uri: positionInfo.TrackURI || mediaInfo.CurrentURI || '',
   };
 }
@@ -144,6 +145,25 @@ export class Renderer {
 
   previous() {
     return this.av('Previous');
+  }
+
+  get canSeek() {
+    return this.supports('av', 'Seek');
+  }
+
+  /**
+   * Seek to a position of the current track, in seconds. REL_TIME is the
+   * mode most renderers know; one that refuses it (710 "Seek mode not
+   * supported") gets ABS_TIME.
+   */
+  async seek(seconds) {
+    const target = formatDuration(seconds);
+    try {
+      await this.av('Seek', { ...INSTANCE, Unit: 'REL_TIME', Target: target });
+    } catch (err) {
+      if (!(err instanceof UpnpError) || err.code !== '710') throw err;
+      await this.av('Seek', { ...INSTANCE, Unit: 'ABS_TIME', Target: target });
+    }
   }
 
   get canPreload() {

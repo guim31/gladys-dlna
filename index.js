@@ -17,6 +17,7 @@ import { buildDiscoveredDevices, discover } from './src/discovery.js';
 import { createActions } from './src/actions.js';
 import { createSceneActions } from './src/scenes.js';
 import { createWidgets, refreshWidgets } from './src/widgets.js';
+import { createCatalog } from './src/catalog.js';
 import { MESSAGES } from './src/messages.js';
 
 // A renderer that went silent may have moved (DHCP, a new port after a
@@ -45,6 +46,7 @@ const context = {
   language: () => config.language,
 };
 widgets = createWidgets(context);
+const catalog = createCatalog(context);
 
 // --- Discovery -----------------------------------------------------------------
 // One discovery at a time: the core runs one network scan per integration.
@@ -83,8 +85,20 @@ gladys.onSetValue(async (device, feature, value) => {
     device.external_id,
     rendererFeatureKey(device.external_id, feature.external_id),
     value,
+    // A 1.x mute (television push button) toggles until the device is updated.
+    { category: feature.category },
   );
 });
+
+// --- Gladys 5.3 music panel (manifest `music`) ------------------------------------
+// Browse and search the media servers added to Gladys, play on a renderer,
+// its play queue, and the artworks (src/catalog.js).
+gladys.onMusicBrowse((device, options) => catalog.browse(device, options));
+gladys.onMusicSearch((device, options) => catalog.search(device, options));
+gladys.onMusicPlay((device, media, mode) => catalog.play(device, media, mode));
+gladys.onMusicQueueGet((device, options) => catalog.queueGet(device, options));
+gladys.onMusicQueuePlay((device, index) => catalog.queuePlay(device, index));
+gladys.onMusicGetArtwork((key) => catalog.artwork(key));
 
 // The devices are published with should_poll: false (the container polls at
 // its own pace); a poll asked by the core anyway just refreshes now.
@@ -103,8 +117,13 @@ gladys.onDeviceCreated(async (device) => {
   refreshWidgets(gladys, widgets);
 });
 
-gladys.onDeviceUpdated(async () => {
+// "Update" in the Discovery tab (1.x devices gaining the Gladys 5.3 music
+// features): the SDK forgot what was published, everything goes again.
+gladys.onDeviceUpdated(async (device) => {
   renderers.sync(gladys.devices);
+  if (parseDeviceExternalId(gladys, device.external_id)?.kind === DEVICE_KINDS.RENDERER) {
+    await renderers.republish(device.external_id);
+  }
 });
 
 gladys.onDeviceDeleted(async (device) => {

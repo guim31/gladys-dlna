@@ -62,7 +62,13 @@ test('a web radio described only in the media metadata still has a title', () =>
         '<DIDL-Lite xmlns:dc="http://purl.org/dc/elements/1.1/"><item><dc:title>FIP</dc:title></item></DIDL-Lite>',
     },
   );
-  assert.deepEqual(media, { title: 'FIP', artist: '', album: '', uri: 'http://radio/stream' });
+  assert.deepEqual(media, {
+    title: 'FIP',
+    artist: '',
+    album: '',
+    albumArtUri: null,
+    uri: 'http://radio/stream',
+  });
 });
 
 test('the volume is a percentage of the declared range (0-60 speaker)', async () => {
@@ -241,7 +247,13 @@ test('the Denon empty artist and album ("") read as empty', () => {
     '<item><dc:title>fip-midfi.mp3</dc:title><upnp:artist>""</upnp:artist>' +
     '<upnp:album> "" </upnp:album><dc:creator>\'\'</dc:creator></item></DIDL-Lite>';
   const media = describeMedia({ TrackMetaData: metadata, TrackURI: 'http://x' }, {});
-  assert.deepEqual(media, { title: 'fip-midfi.mp3', artist: '', album: '', uri: 'http://x' });
+  assert.deepEqual(media, {
+    title: 'fip-midfi.mp3',
+    artist: '',
+    album: '',
+    albumArtUri: null,
+    uri: 'http://x',
+  });
 });
 
 test('a refused action throws with the UPnP error', async () => {

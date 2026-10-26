@@ -5,8 +5,12 @@ A [Gladys Assistant](https://gladysassistant.com) external integration for **DLN
 
 - **Renderers** (`MediaRenderer`): TVs, amplifiers, speakers, streamers. Each one becomes a Gladys
   device with play, pause, stop, previous, next, volume, mute, playback state and the title being
-  played. They work with the core **Music** dashboard widget and the core **"Play a notification"**
-  scene action (Gladys Plus text-to-speech).
+  played. They work with the core **"Play a notification"** scene action (Gladys Plus
+  text-to-speech).
+- **Gladys 5.3 music player**: the core **Music** widget shows the cover, title, artist, album and
+  progress of each renderer, with seek, shuffle, repeat and mute; its panel browses and searches
+  the media servers added to Gladys, plays or queues a track, an album, an artist or a playlist,
+  and shows the play queue. The core scene action "Play music on a speaker" uses the same catalog.
 - **Media servers** (`MediaServer`): Plex, Jellyfin, Emby, MiniDLNA, a NAS, Kodi… Browsed and
   searched with `ContentDirectory` (`Browse`, and `Search` when the server has it).
 - **Scenes**: "Play a media server on a DLNA renderer" (search by title, artist, album or folder;
@@ -26,8 +30,8 @@ maker._
 
 ## Requirements
 
-- Gladys Assistant **5.1.0** or later (scene triggers and actions, dashboard widgets, mediated
-  network discovery).
+- Gladys Assistant **5.3.0** or later (the music player of Gladys 5.3; scene triggers and actions,
+  dashboard widgets, mediated network discovery).
 - Renderers and servers on the same network as Gladys for automatic discovery; a device on another
   subnet or VLAN can be added by the URL of its UPnP description.
 - Albums and folders are queued track by track by the integration, so a renderer plays them only
@@ -54,9 +58,19 @@ maker._
   "unreachable" badge). Only the changes are published.
 - **Queue**: a DLNA renderer plays one URI at a time. To play an album or a folder, the integration
   preloads the next track with `SetNextAVTransportURI` when the renderer supports it (gapless), or
-  starts it when the current one ends. Next / previous walk that queue.
-- No runtime dependency besides the Gladys SDK: the XML reader, the SOAP client and the DIDL-Lite
-  handling are a few hundred lines in [`src/upnp/`](src/upnp/).
+  starts it when the current one ends. Next / previous walk that queue; shuffle and repeat are its
+  modes (UPnP has no standard queue: the play mode of a renderer only applies to its own playlist).
+- **Gladys 5.3 music player**: what each renderer plays (`GetPositionInfo` / `GetMediaInfo`
+  metadata, completed by what Gladys asked it to play) goes through `publishNowPlaying`, which keeps
+  only the changes; the position is a sample, never a stream. The catalog (`music` in the manifest:
+  browse, search, queue, append) is the `ContentDirectory` of the media servers added to Gladys
+  ([`src/catalog.js`](src/catalog.js)); covers are read from the server's `albumArtURI` (the
+  `JPEG_TN` variant for lists) and made smaller in plain JavaScript when Gladys would refuse them
+  ([`src/artwork-resize.js`](src/artwork-resize.js), from gladys-mopidy).
+- **Devices added before 1.2**: "Update" in the Discovery tab adds the new features and turns the
+  mute push button into the music mute (same external id); the playback state is 2 when stopped.
+- Runtime dependencies: the Gladys SDK, and the JPEG encoder of `jpeg-js` (covers). The XML reader,
+  the SOAP client and the DIDL-Lite handling are a few hundred lines in [`src/upnp/`](src/upnp/).
 
 ## Limitations
 
@@ -69,7 +83,10 @@ maker._
   wake-up ignores it.
 - **Sonos, Samsung TV and LG webOS** have their own integrations, which do more than DLNA can
   (grouping, sources, apps). DLNA still works on them, for playing media and announcements.
-- No album art in the widget (images would need resizing in the container).
+- Covers appear in the core Music widget only, not in the "DLNA player" widget of the
+  integration.
+- Shuffle and repeat apply to the play queue of the integration (what Gladys plays), not to media
+  started by another app.
 - The core "Play a notification" action does not pass its volume to external integrations: the
   announcement plays at the current volume. The "Play a URL" scene action has a volume field.
 - After an announcement, the previous media is not resumed.

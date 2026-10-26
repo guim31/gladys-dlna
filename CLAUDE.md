@@ -39,7 +39,10 @@ src/upnp/                         UPnP layer, no dependency: xml.js (reader), ht
 src/registry.js                   description URL → known devices, capabilities, cached clients
 src/discovery.js                  mediated SSDP scan + manual URLs + created devices → Discovery tab
 src/devices/                      renderer.js / server.js discovery payloads, index.js ids and params
-src/poller.js                     renderer polling, commands, play queue, scene triggers
+src/poller.js                     renderer polling, commands, play queue (shuffle, repeat), scene
+                                  triggers, the Gladys 5.3 now-playing snapshot (publishNowPlaying)
+src/catalog.js                    Gladys 5.3 music panel: browse/search the servers, play, queue, artwork
+src/artwork-resize.js             covers made small enough for the core, plain JS (copied from gladys-mopidy)
 src/states.js                     publish only the changed states
 src/actions.js, scenes.js, widgets.js  manifest actions, scene actions, the "player" and "favorites" widgets
 src/favorites.js, playback.js     favorites of the configuration; what scenes, favorites and widgets share
@@ -196,6 +199,31 @@ code de ce dépôt. Compléter ce fichier quand un nouveau piège est découvert
   une au retour, le reste en debug (`LOG_LEVEL=debug`). Les URL passent par `loggableUrl` (ni
   identifiants ni paramètres). `test/polling.test.js` vérifie qu'un cycle normal n'écrit rien en
   info.
+
+**Lecteur Musique de Gladys 5.3 (1.2, SDK 0.16)**
+
+- Ids gardés : `playback-state` (passé par `featureExternalIds`), `mute` (television/volume_mute en
+  1.x, devenu music/mute au même id : « Mettre à jour » le convertit ; avant, `onSetValue` reçoit
+  `feature.category` television et garde la bascule). Les nouveaux types suivent `<device>:<type>`.
+- Tout ce qui est `music` (volume, sourdine compris) part par `publishNowPlaying` ; le
+  `StatePublisher` ne garde que le texte « now-playing ». `onDeviceUpdated` republie tout.
+- Pas de GENA (aucun port entrant) : le relevé reste ; une position figée (renderer qui répond
+  toujours 0:00:00) n'est pas republiée (sinon le SDK la renvoie à chaque relevé, écart > 3 s).
+- La file, l'aléatoire et la répétition sont ceux de l'intégration (UPnP n'a pas de file ; le
+  `SetPlayMode` d'un renderer s'applique à sa propre liste, que Gladys ne remplit jamais). En
+  répétition d'un morceau, rien n'est préchargé (un renderer ne distingue pas deux URI identiques) :
+  `SetNextAVTransportURI` vide, et le morceau est relancé à sa fin.
+- Catalogue : racine = serveurs ajoutés à Gladys (le contenu directement s'il n'y en a qu'un). Ids
+  `dlna:<c|i>:<platformId>:<objectId>:<titre>` (encodés) : minidlna renumérote ses objets à une
+  reconstruction, l'objet est retrouvé par son titre (Search, sinon parcours), en préférant un album
+  à un dossier du même nom. Un `Search` sans résultat fait foi (pas de parcours derrière).
+- Banc réel (26/10) : upmpdcli 1.9.6 + MPD 0.24 (sortie `null`, `mixer_type "software"`, sinon pas
+  de volume) et MiniDLNA 1.3.3 dans **un seul conteneur `--network none`** (UPnP sur `lo` :
+  `network_interface=lo`, `upnpiface = lo`), l'intégration verrouillée dans le même espace réseau
+  (`--network container:`) : aucune annonce SSDP ne sort sur le pont Docker de l'hôte (un réseau
+  bridge `--internal` recevait des M-SEARCH de l'hôte). MiniDLNA : `TotalMatches` 0 sur la racine,
+  albumArtURI en `JPEG_TN` 160 px seulement ; les images d'un dossier sont des `imageItem` avec une
+  ressource (ne pas les mettre en file). upmpdcli coupe le son en mettant le volume à 0.
 
 **Formulaires de configuration et actions**
 
