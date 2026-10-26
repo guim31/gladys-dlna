@@ -170,8 +170,8 @@ test('DIDL: the escaped track metadata of a renderer is read, entities included'
 });
 
 test('DIDL: empty or unimplemented metadata is no metadata', () => {
-  assert.deepEqual(parseDidl(''), { items: [], containers: [] });
-  assert.deepEqual(parseDidl('NOT_IMPLEMENTED'), { items: [], containers: [] });
+  assert.deepEqual(parseDidl(''), { items: [], containers: [], objects: [] });
+  assert.deepEqual(parseDidl('NOT_IMPLEMENTED'), { items: [], containers: [], objects: [] });
   const position = parseResponse(
     'GetPositionInfo',
     readFixture('denon-avr-s650h', 'soap-GetPositionInfo.xml'),

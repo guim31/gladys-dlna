@@ -52,6 +52,11 @@ function parseObject(node) {
     album: cleanText(childText(node, 'album')),
     trackNumber: Number(childText(node, 'originalTrackNumber')) || null,
     albumArtUri: childText(node, 'albumArtURI'),
+    // Every albumArtURI, with its DLNA profile (JPEG_TN: 160 px at most,
+    // JPEG_SM: 640 px at most; none: the image as the server has it).
+    albumArts: children(node, 'albumArtURI')
+      .map((art) => ({ uri: art.text.trim(), profile: art.attributes.profileID ?? '' }))
+      .filter((art) => art.uri),
     resources: children(node, 'res')
       .map((res) => ({
         uri: res.text.trim(),
@@ -62,25 +67,76 @@ function parseObject(node) {
   };
 }
 
+// Preference of the DLNA image profiles, by use: the now-playing frame
+// renders under 400 px wide (the small 640 px variant first, then the
+// server's own image, resized by the integration when too heavy, the
+// thumbnail last), a list row under 64 px (the thumbnail first).
+const ARTWORK_PROFILES = {
+  player: [
+    'JPEG_SM',
+    'PNG_SM',
+    '',
+    'JPEG_MED',
+    'PNG_MED',
+    'JPEG_LRG',
+    'PNG_LRG',
+    'JPEG_TN',
+    'PNG_TN',
+  ],
+  list: [
+    'JPEG_TN',
+    'PNG_TN',
+    'JPEG_SM',
+    'PNG_SM',
+    '',
+    'JPEG_MED',
+    'PNG_MED',
+    'JPEG_LRG',
+    'PNG_LRG',
+  ],
+};
+
 /**
- * Parse a DIDL-Lite document into `{ items, containers }`. An empty or
- * unparsable document (renderers answer "NOT_IMPLEMENTED" or nothing) gives
- * two empty lists, never an error: metadata is a nicety.
+ * The albumArtURI of an object to show `for` the player or a list row: an
+ * absolute http(s) URL, or null. An unknown profile comes after the known
+ * ones.
+ */
+export function pickArtwork(object, use = 'player') {
+  const order = ARTWORK_PROFILES[use] ?? ARTWORK_PROFILES.player;
+  const rank = (art) => {
+    const index = order.indexOf(art.profile.toUpperCase());
+    return index === -1 ? order.length : index;
+  };
+  const arts = (object?.albumArts ?? []).filter((art) => /^https?:\/\//i.test(art.uri));
+  if (arts.length === 0) return null;
+  return [...arts].sort((a, b) => rank(a) - rank(b))[0].uri;
+}
+
+/**
+ * Parse a DIDL-Lite document into `{ items, containers, objects }`, `objects`
+ * holding both in the order of the document. An empty or unparsable document
+ * (renderers answer "NOT_IMPLEMENTED" or nothing) gives empty lists, never an
+ * error: metadata is a nicety.
  */
 export function parseDidl(xml) {
+  const empty = { items: [], containers: [], objects: [] };
   const text = String(xml ?? '').trim();
   if (!text.startsWith('<')) {
-    return { items: [], containers: [] };
+    return empty;
   }
   let root;
   try {
     root = parseXml(text);
   } catch {
-    return { items: [], containers: [] };
+    return empty;
   }
+  const objects = root.children
+    .filter((node) => node.name === 'item' || node.name === 'container')
+    .map(parseObject);
   return {
-    items: children(root, 'item').map(parseObject),
-    containers: children(root, 'container').map(parseObject),
+    items: objects.filter((object) => object.kind === 'item'),
+    containers: objects.filter((object) => object.kind === 'container'),
+    objects,
   };
 }
 

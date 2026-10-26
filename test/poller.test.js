@@ -32,7 +32,8 @@ test('the first poll publishes the real Denon state once, then only changes', as
   const denon = await scriptedDenon();
   const { gladys, manager, id, feature } = denon;
   await manager.refresh(id);
-  assert.deepEqual(statesOf(gladys, feature(RENDERER_FEATURES.PLAYBACK_STATE)), [0]);
+  // Gladys 5.3: stopped is IDLE (2), no longer 0.
+  assert.deepEqual(statesOf(gladys, feature(RENDERER_FEATURES.PLAYBACK_STATE)), [2]);
   assert.deepEqual(statesOf(gladys, feature(RENDERER_FEATURES.VOLUME)), [11]);
   assert.deepEqual(statesOf(gladys, feature(RENDERER_FEATURES.NOW_PLAYING)), [
     { text: NOTHING_PLAYING },
@@ -107,7 +108,9 @@ test('an unreachable renderer: badge, not playing, no trigger, back to local on 
     gladys.transports.map((entry) => entry.transport),
     ['local', 'unreachable'],
   );
-  assert.deepEqual(statesOf(gladys, feature(RENDERER_FEATURES.PLAYBACK_STATE)), [1, 0]);
+  // Gone: IDLE, nothing loaded.
+  assert.deepEqual(statesOf(gladys, feature(RENDERER_FEATURES.PLAYBACK_STATE)), [1, 2]);
+  assert.deepEqual(statesOf(gladys, feature(RENDERER_FEATURES.TITLE)).at(-1), { text: '' });
 
   network.setDown('http://192.0.2.10:60006', false);
   state.transport = 'STOPPED';
@@ -131,9 +134,17 @@ test('device commands reach the renderer and poll again soon', async () => {
   assert.equal(state.transport, 'STOPPED');
   await manager.command(id, RENDERER_FEATURES.VOLUME, 42);
   assert.equal(state.volume, 42);
-  await manager.command(id, RENDERER_FEATURES.MUTE, 1);
+  // Gladys 5.3 music/mute: the value is the state.
+  await manager.command(id, RENDERER_FEATURES.MUTE, 1, { category: 'music' });
   assert.equal(state.muted, true);
-  await manager.command(id, RENDERER_FEATURES.MUTE, 1);
+  await manager.command(id, RENDERER_FEATURES.MUTE, 1, { category: 'music' });
+  assert.equal(state.muted, true);
+  await manager.command(id, RENDERER_FEATURES.MUTE, 0, { category: 'music' });
+  assert.equal(state.muted, false);
+  // The 1.x push button (television, before "Update"): always 1, toggles.
+  await manager.command(id, RENDERER_FEATURES.MUTE, 1, { category: 'television' });
+  assert.equal(state.muted, true);
+  await manager.command(id, RENDERER_FEATURES.MUTE, 1, { category: 'television' });
   assert.equal(state.muted, false);
   await manager.command(id, RENDERER_FEATURES.NEXT, 1);
   await manager.command(id, RENDERER_FEATURES.PREVIOUS, 1);

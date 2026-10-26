@@ -61,7 +61,7 @@ test('the container polls the renderers itself: no onPoll needed', async (t) => 
   assert.equal(timers.last().delay, 0);
   await runTimer(denon);
   assert.equal(gladys.fake.lastState(feature(RENDERER_FEATURES.VOLUME)), 11);
-  assert.equal(gladys.fake.lastState(feature(RENDERER_FEATURES.PLAYBACK_STATE)), 0);
+  assert.equal(gladys.fake.lastState(feature(RENDERER_FEATURES.PLAYBACK_STATE)), 2);
   assert.equal(timers.last().delay, POLL_INTERVALS_MS.IDLE, 'the next poll is scheduled');
 
   // A change on the renderer reaches Gladys through the timer alone.

@@ -79,4 +79,59 @@ export const MESSAGES = {
     de: 'Dieser Favorit ist nicht eingerichtet: Fülle ihn in der Konfiguration der Integration aus.',
     es: 'Este favorito no está configurado: rellénelo en la configuración de la integración.',
   },
+  // Gladys 5.3 music player: commands, queue and catalog (src/catalog.js).
+  BAD_PLAYBACK_STATE: {
+    en: 'Unknown playback state: 0 pauses, 1 plays, 2 stops.',
+    fr: 'État de lecture inconnu : 0 met en pause, 1 lance la lecture, 2 arrête.',
+    de: 'Unbekannter Wiedergabestatus: 0 pausiert, 1 spielt ab, 2 stoppt.',
+    es: 'Estado de reproducción desconocido: 0 pausa, 1 reproduce, 2 detiene.',
+  },
+  BAD_REPEAT: {
+    en: 'Unknown repeat mode: 0 off, 1 all, 2 one track.',
+    fr: 'Mode de répétition inconnu : 0 désactivé, 1 tout, 2 un morceau.',
+    de: 'Unbekannter Wiederholungsmodus: 0 aus, 1 alle, 2 ein Titel.',
+    es: 'Modo de repetición desconocido: 0 desactivado, 1 todo, 2 una pista.',
+  },
+  CANNOT_SEEK: {
+    en: 'This renderer cannot move within a track (no Seek in its UPnP description).',
+    fr: 'Ce lecteur ne sait pas se déplacer dans un morceau (pas de Seek dans sa description UPnP).',
+    de: 'Dieses Gerät kann nicht innerhalb eines Titels springen (kein Seek in seiner UPnP-Beschreibung).',
+    es: 'Este reproductor no puede moverse dentro de una pista (sin Seek en su descripción UPnP).',
+  },
+  QUEUE_FULL: {
+    en: 'The play queue is full (200 tracks): play something else or wait for it to move on.',
+    fr: "La file d'attente est pleine (200 morceaux) : lancez autre chose ou attendez qu'elle avance.",
+    de: 'Die Warteschlange ist voll (200 Titel): Spiele etwas anderes ab oder warte, bis sie weiterläuft.',
+    es: 'La cola de reproducción está llena (200 pistas): reproduzca otra cosa o espere a que avance.',
+  },
+  QUEUE_INDEX: {
+    en: 'This track is no longer in the play queue: open the queue again.',
+    fr: "Ce morceau n'est plus dans la file d'attente : rouvrez la file.",
+    de: 'Dieser Titel ist nicht mehr in der Warteschlange: Öffne die Warteschlange erneut.',
+    es: 'Esta pista ya no está en la cola de reproducción: vuelva a abrir la cola.',
+  },
+  NO_SERVER: {
+    en: 'No DLNA media server in Gladys: add one from the Discover tab of the integration to browse and search it.',
+    fr: "Aucun serveur multimédia DLNA dans Gladys : ajoutez-en un depuis l'onglet Découverte de l'intégration pour le parcourir et y chercher.",
+    de: 'Kein DLNA-Medienserver in Gladys: Füge einen im Tab „Entdecken“ der Integration hinzu, um ihn zu durchsuchen.',
+    es: 'No hay ningún servidor multimedia DLNA en Gladys: añada uno desde la pestaña Descubrir de la integración para explorarlo y buscar en él.',
+  },
+  SERVER_GONE: {
+    en: 'This media server is no longer in Gladys: add it again from the Discover tab.',
+    fr: "Ce serveur multimédia n'est plus dans Gladys : ajoutez-le de nouveau depuis l'onglet Découverte.",
+    de: 'Dieser Medienserver ist nicht mehr in Gladys: Füge ihn im Tab „Entdecken“ erneut hinzu.',
+    es: 'Este servidor multimedia ya no está en Gladys: vuelva a añadirlo desde la pestaña Descubrir.',
+  },
+  MEDIA_GONE: {
+    en: 'This media is no longer on the media server (renamed, moved or deleted): pick it again.',
+    fr: "Ce média n'est plus sur le serveur multimédia (renommé, déplacé ou supprimé) : choisissez-le de nouveau.",
+    de: 'Dieses Medium ist nicht mehr auf dem Medienserver (umbenannt, verschoben oder gelöscht): Wähle es erneut.',
+    es: 'Este medio ya no está en el servidor multimedia (renombrado, movido o eliminado): vuelva a elegirlo.',
+  },
+  UNKNOWN_MEDIA: {
+    en: 'This media does not come from the DLNA integration: pick it in the DLNA catalog.',
+    fr: "Ce média ne vient pas de l'intégration DLNA : choisissez-le dans le catalogue DLNA.",
+    de: 'Dieses Medium stammt nicht aus der DLNA-Integration: Wähle es im DLNA-Katalog.',
+    es: 'Este medio no procede de la integración DLNA: elíjalo en el catálogo DLNA.',
+  },
 };

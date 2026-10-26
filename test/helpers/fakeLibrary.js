@@ -6,7 +6,7 @@
 
 import { escapeXml } from '../../src/upnp/xml.js';
 
-const track = (id, parentId, title, artist, album, trackNumber, ext = 'mp3') => ({
+export const track = (id, parentId, title, artist, album, trackNumber, ext = 'mp3') => ({
   kind: 'item',
   id,
   parentId,
@@ -22,7 +22,7 @@ const track = (id, parentId, title, artist, album, trackNumber, ext = 'mp3') => 
   },
 });
 
-const folder = (id, parentId, title) => ({
+export const folder = (id, parentId, title) => ({
   kind: 'container',
   id,
   parentId,
@@ -66,10 +66,19 @@ export function defaultLibrary() {
 function didl(objects) {
   const body = objects
     .map((object) => {
+      // Album art, with its DLNA profile like minidlna writes it.
+      const arts = (object.albumArts ?? [])
+        .map(
+          ({ uri, profile }) =>
+            `<upnp:albumArtURI${profile ? ` dlna:profileID="${profile}"` : ''}>${escapeXml(uri)}</upnp:albumArtURI>`,
+        )
+        .join('');
       if (object.kind === 'container') {
         return (
           `<container id="${escapeXml(object.id)}" parentID="${escapeXml(object.parentId)}" restricted="1">` +
-          `<dc:title>${escapeXml(object.title)}</dc:title><upnp:class>${object.upnpClass}</upnp:class></container>`
+          `<dc:title>${escapeXml(object.title)}</dc:title><upnp:class>${object.upnpClass}</upnp:class>` +
+          (object.artist ? `<upnp:artist>${escapeXml(object.artist)}</upnp:artist>` : '') +
+          `${arts}</container>`
         );
       }
       return (
@@ -80,7 +89,7 @@ function didl(objects) {
         (object.trackNumber
           ? `<upnp:originalTrackNumber>${object.trackNumber}</upnp:originalTrackNumber>`
           : '') +
-        `<upnp:class>${object.upnpClass}</upnp:class>` +
+        `<upnp:class>${object.upnpClass}</upnp:class>${arts}` +
         `<res protocolInfo="http-get:*:${object.res.mime}:DLNA.ORG_OP=01" duration="${object.res.duration}">` +
         `${escapeXml(object.res.uri)}</res></item>`
       );
@@ -88,7 +97,8 @@ function didl(objects) {
     .join('');
   return (
     '<DIDL-Lite xmlns="urn:schemas-upnp-org:metadata-1-0/DIDL-Lite/"' +
-    ' xmlns:dc="http://purl.org/dc/elements/1.1/" xmlns:upnp="urn:schemas-upnp-org:metadata-1-0/upnp/">' +
+    ' xmlns:dc="http://purl.org/dc/elements/1.1/" xmlns:upnp="urn:schemas-upnp-org:metadata-1-0/upnp/"' +
+    ' xmlns:dlna="urn:schemas-dlna-org:metadata-1-0/">' +
     `${body}</DIDL-Lite>`
   );
 }

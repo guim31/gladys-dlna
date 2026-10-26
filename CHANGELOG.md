@@ -10,6 +10,36 @@ the notes of the version's GitHub Release.
 
 ## [Unreleased]
 
+### Added
+
+- **Gladys 5.3 music player.** Each renderer now tells the core Music widget what it plays: title,
+  artist, album, cover, duration and position (a progress bar you can drag: a seek), plus shuffle,
+  repeat and mute. The widget's panel browses and searches the media servers added to Gladys
+  (`Search` of the server, or its folders), plays a track, an album, an artist or a playlist, and
+  puts media in the play queue (play next, add to queue); the queue panel shows the play queue of
+  the integration and jumps to a track. The core scene action "Play music on a speaker" uses the
+  same catalog. Requires Gladys 5.3.0.
+- Shuffle and repeat (off, all, one track) for the play queue of the integration.
+- Covers: the album art of the media server (its 160 px variant first); a large cover (several
+  megabytes) is made smaller in the container, in plain JavaScript (Gladys accepts 300 KB at most).
+- A scene that keeps a media whose server object was renumbered (MiniDLNA rebuilding its database)
+  finds it again by its title.
+
+### Changed
+
+- **The playback state is 2 when stopped or when nothing is loaded** (Gladys 5.3), no longer 0: a
+  scene "playback state equals 0" now only starts on a pause. It is writable: 0 pauses, 1 plays,
+  2 stops; 3 is published while the renderer loads a media.
+- Mute becomes the music mute of Gladys 5.3 (same feature): on or off instead of a toggle button.
+  For devices added before this version, open the Discovery tab and press **Update** on each
+  renderer to get the new features; until then, the mute button toggles as before.
+- The "Now playing" text feature stays, next to the new title, artist and album features.
+- A renderer that cannot be reached is published as stopped with nothing loaded.
+- Pictures of a folder (`cover.jpg`) are no longer queued as tracks when a scene plays a folder.
+- A track a media server lists twice (an artist's "- All Albums -" view and each album) is queued
+  once.
+- Gladys 5.3.0 or later is required (SDK 0.16.0).
+
 ## [1.1.2] - 2026-10-22
 
 ### Security

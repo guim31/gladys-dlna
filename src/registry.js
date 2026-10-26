@@ -93,6 +93,7 @@ export class Registry {
       volumeRange: rc?.ranges.Volume,
       hasVolume: !!renderingControl && has(rc, 'GetVolume') && has(rc, 'SetVolume'),
       hasMute: !!renderingControl && has(rc, 'GetMute') && has(rc, 'SetMute'),
+      canSeek: has(av, 'Seek'),
     };
   }
 
@@ -129,6 +130,7 @@ export class Registry {
       info.capabilities = await this.readCapabilities(device);
       info.hasVolume = info.capabilities.hasVolume;
       info.hasMute = info.capabilities.hasMute;
+      info.canSeek = info.capabilities.canSeek;
       infos.push(this.remember(info));
     }
     for (const device of servers) {

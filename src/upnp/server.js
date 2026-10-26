@@ -57,7 +57,10 @@ function albumOrder(a, b) {
   );
 }
 
-const playable = (item) => item.resources.length > 0;
+// A picture of a folder (cover.jpg) is an item with a resource too: never
+// handed to a renderer as a track.
+const playable = (item) =>
+  item.resources.length > 0 && !/^object\.item\.imageitem/i.test(item.upnpClass ?? '');
 
 /** A lookup that ran out of its time budget (see MediaServer.withDeadline). */
 export class SearchTimeoutError extends Error {
@@ -181,7 +184,7 @@ export class MediaServer {
   }
 
   /** Every result of a Search, page after page, up to `max` objects. */
-  async search(containerId, criteria, { max = PAGE_SIZE } = {}) {
+  async search(containerId, criteria, { max = PAGE_SIZE, pageSize = PAGE_SIZE } = {}) {
     const items = [];
     const containers = [];
     let start = 0;
@@ -191,7 +194,7 @@ export class MediaServer {
         SearchCriteria: criteria,
         Filter: '*',
         StartingIndex: String(start),
-        RequestedCount: String(PAGE_SIZE),
+        RequestedCount: String(pageSize),
         SortCriteria: '',
       });
       const page = parseDidl(answer.Result);
@@ -200,7 +203,7 @@ export class MediaServer {
       const received = page.items.length + page.containers.length;
       const total = Number(answer.TotalMatches) || 0;
       start += Number(answer.NumberReturned) || received;
-      const done = received === 0 || (total > 0 ? start >= total : received < PAGE_SIZE);
+      const done = received === 0 || (total > 0 ? start >= total : received < pageSize);
       if (done || items.length + containers.length >= max) break;
     }
     return { items, containers };
@@ -253,10 +256,20 @@ export class MediaServer {
     }
   }
 
-  /** Items of a container and of its sub-containers (depth first), up to `limit`. */
-  async collectItems(containerId, { limit, depth = 0 } = {}) {
+  /**
+   * Items of a container and of its sub-containers (depth first), up to
+   * `limit`, each once: an artist lists its tracks under "- All Albums -"
+   * (MiniDLNA) or "all - <artist>" (Gerbera) and again under each album.
+   */
+  async collectItems(containerId, { limit, depth = 0, seen = new Set() } = {}) {
     const { items, containers } = await this.browseChildren(containerId);
-    const collected = items.filter(playable);
+    const collected = [];
+    for (const item of items.filter(playable)) {
+      const key = item.resources[0]?.uri ?? item.id;
+      if (seen.has(key)) continue;
+      seen.add(key);
+      collected.push(item);
+    }
     if (depth < 3) {
       for (const container of containers) {
         if (collected.length >= limit) break;
@@ -264,6 +277,7 @@ export class MediaServer {
           ...(await this.collectItems(container.id, {
             limit: limit - collected.length,
             depth: depth + 1,
+            seen,
           })),
         );
       }
