@@ -10,6 +10,8 @@ the notes of the version's GitHub Release.
 
 ## [Unreleased]
 
+## [1.2.0] - 2026-10-26
+
 ### Added
 
 - **Gladys 5.3 music player.** Each renderer now tells the core Music widget what it plays: title,
@@ -130,7 +132,8 @@ the notes of the version's GitHub Release.
 
 - The demo devices, actions, scenes and widget of the template.
 
-[Unreleased]: https://github.com/guim31/gladys-dlna/compare/v1.1.2...HEAD
+[Unreleased]: https://github.com/guim31/gladys-dlna/compare/v1.2.0...HEAD
+[1.2.0]: https://github.com/guim31/gladys-dlna/compare/v1.1.2...v1.2.0
 [1.1.2]: https://github.com/guim31/gladys-dlna/compare/v1.1.1...v1.1.2
 [1.1.1]: https://github.com/guim31/gladys-dlna/compare/v1.1.0...v1.1.1
 [1.1.0]: https://github.com/guim31/gladys-dlna/compare/v1.0.4...v1.1.0
